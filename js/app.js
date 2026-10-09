@@ -245,6 +245,7 @@ function withTimeout(p, ms) {
     ]);
     TG.ready();
     await Progress.load();
+    await STARS.syncPremium();
     TON.init(new URL('tonconnect-manifest.json', location.href).href);
     render();
 
