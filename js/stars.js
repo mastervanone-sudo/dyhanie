@@ -47,4 +47,19 @@ export const STARS = {
       return { ok: false, reason: 'error' };
     }
   },
+
+  // Синхронизация статуса Premium с сервером (по подписи initData)
+  async syncPremium() {
+    if (!this.configured || !TG.initData) return;
+    try {
+      const res = await fetch(API_BASE + '/premium?initData=' + encodeURIComponent(TG.initData));
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.premium) {
+        Progress.setPremium(true);
+        await Progress.save();
+        if (typeof window.__onPremiumChange === 'function') window.__onPremiumChange();
+      }
+    } catch (e) {}
+  },
 };
