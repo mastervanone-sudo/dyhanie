@@ -3,9 +3,9 @@
 // Пока бэкенда нет, модуль работает как заготовка и честно сообщает об этом.
 import { TG } from './telegram.js';
 import { Progress } from './store.js';
+import { API_BASE } from './config.js';
 
-// Укажи адрес своего бэкенда, когда поднимешь (например, https://api.example.com)
-export const API_BASE = '';
+export { API_BASE };
 
 export const PLANS = [
   { id: 'week', title: 'Неделя', stars: 99, days: 7 },

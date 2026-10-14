@@ -263,3 +263,17 @@ html.light .card, html.light .hub-card { border-color: #D5E4E2; }
 html.light .sheet { background: #F3F8F7; }
 html.light .session { background: radial-gradient(circle at 50% 38%, #DCEFEC, var(--bg) 70%); }
 html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: #06231f; }
+
+/* энергодыхание / матрица */
+.hub-card.dim { opacity: .5; }
+.ep-orb-wrap { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 300px; position: relative; }
+.ep-orb { width: 200px; height: 200px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 60px rgba(120,160,255,.35); animation: ep-pulse 5s ease-in-out infinite; }
+@keyframes ep-pulse { 0%,100% { transform: scale(.95); } 50% { transform: scale(1.06); } }
+.ep-orb .orb-inner span { color: #fff; font-size: 20px; font-weight: 700; text-align: center; }
+.ep-orb .orb-left { color: rgba(255,255,255,.85); font-size: 30px; }
+.ep-guide { text-align: center; padding: 0 20px; line-height: 1.5; }
+.ep-list { width: 100%; max-width: 460px; padding: 4px 16px; }
+.ep-item { color: var(--muted); font-size: 14px; padding: 4px 0; }
+.ep-item.on { color: var(--accent2); font-weight: 600; }
+.stage-card { background: var(--card); border-radius: 14px; padding: 14px; margin: 10px 0; }
+.copy-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }

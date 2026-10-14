@@ -44,6 +44,8 @@ function defaults() {
     openDays: {},
     profileName: '',
     lightTheme: false,
+    energyPrograms: [],
+    energyPresetFirstDay: 0,
   };
 }
 
@@ -216,6 +218,19 @@ class ProgressStore {
 
   setName(name) { this.data.profileName = (name || '').trim().slice(0, 30); }
   setLightTheme(v) { this.data.lightTheme = !!v; }
+
+  // ---------- свои программы энергодыхания ----------
+  get energyPrograms() { return this.data.energyPrograms || []; }
+  getEnergyProgram(id) { return this.energyPrograms.find((p) => p.id === id) || null; }
+  upsertEnergyProgram(p) {
+    p.id = p.id || ('custom_' + Date.now());
+    const i = this.energyPrograms.findIndex((x) => x.id === p.id);
+    if (i >= 0) this.data.energyPrograms[i] = p; else this.data.energyPrograms.push(p);
+    return p;
+  }
+  deleteEnergyProgram(id) { this.data.energyPrograms = this.energyPrograms.filter((p) => p.id !== id); }
+  get energyPresetFirstDay() { return this.data.energyPresetFirstDay || 0; }
+  setEnergyFirstDay(day) { if (!this.data.energyPresetFirstDay) this.data.energyPresetFirstDay = day; }
 
   // ---------- свои ритмы ----------
   get customPatterns() { return this.data.customPatterns || []; }

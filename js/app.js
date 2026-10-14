@@ -3,6 +3,8 @@ import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js';
 import { ARTICLES, articleById } from './knowledge.js';
 import { MusicLibrary } from './music.js';
 import { SOLFEGGIO, toneByHz } from './solfeggio.js';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js';
+import { MatrixBase } from './matrix.js';
 import { Audio, BREATH_VARIANTS } from './audio.js';
 import { TG, loadScript } from './telegram.js';
 import { BreathSession, fmtClock } from './session.js';
@@ -141,6 +143,19 @@ function screenHome() {
       <div><div class="hub-t">База знаний</div>
       <div class="hub-d">Короткие статьи о пользе дыхания и науке</div>
       <div class="hub-m">${ARTICLES.length} статей</div></div>
+    </button>
+    <h3>Программы</h3>
+    <button class="hub-card" onclick="window.__openEnergy()">
+      <div class="hub-ico">🔷</div>
+      <div><div class="hub-t">Энергодыхание Романа Карловского</div>
+      <div class="hub-d">Связное частое и медленное дыхание под музыку и подсказки — отдельный плеер по этапам.</div>
+      <div class="hub-m" style="color:var(--gold)">Есть противопоказания</div></div>
+    </button>
+    <button class="hub-card" onclick="window.__openMatrix()">
+      <div class="hub-ico">🌀</div>
+      <div><div class="hub-t">Матрица Гаряева</div>
+      <div class="hub-d">Метод волновой генетики: звуковые программы и описание методики</div>
+      <div class="hub-m">Ознакомительный раздел</div></div>
     </button>
     <div class="cards">${patternCards}</div>
     <h3>Свои ритмы</h3>
@@ -704,6 +719,253 @@ function renameModalHtml() {
   </div>`;
 }
 
+// ---------- энергодыхание ----------
+let bgEl = null;
+let extEl = null;
+let epTimer = null;
+let audioPoll = null;
+
+function playBg(trackId, vol) {
+  if (!bgEl) { bgEl = new window.Audio(); bgEl.loop = true; }
+  bgEl.src = MusicLibrary.url(trackId);
+  bgEl.volume = vol;
+  bgEl.play().catch(() => {});
+}
+function stopBg() { if (bgEl) { bgEl.pause(); bgEl.currentTime = 0; } }
+
+function energyCard(title, subtitle, enabled, handler) {
+  return `<button class="hub-card ${enabled ? '' : 'dim'}" onclick="window.${handler}()">
+    <div class="hub-ico">🔷</div>
+    <div><div class="hub-t">${title}</div>
+    <div class="hub-d">${subtitle}</div></div>
+  </button>`;
+}
+
+function screenEnergy() {
+  const ack = !!state.energyAck;
+  return `${header('Энергодыхание', true)}
+    <p class="sub">${EnergyInfo.title}</p>
+    <p>${EnergyInfo.intro[0]}</p>
+    <button class="mini" onclick="window.__energyAbout()">О методе и противопоказаниях ›</button>
+    <label class="check-row"><input type="checkbox" ${ack ? 'checked' : ''} onchange="window.__energyAck(this.checked)"><span>Я ознакомился с противопоказаниями</span></label>
+    ${energyCard('Прокачай свой мозг', 'Аудио-практики', ack, '__energyCourse')}
+    ${energyCard('Создать своё энергодыхание', 'Собрать программу по этапам', ack, '__energyBuilder')}
+    ${energyCard('Быстрый старт по этапам', 'Готовая программа: короткая / стандарт / глубокая', ack, '__energyPreset')}
+    ${!ack ? '<p class="muted">Отметьте согласие выше, чтобы открыть практики.</p>' : ''}`;
+}
+
+function screenEnergyAbout() {
+  const h = (t) => `<h3>${t}</h3>`;
+  return `${header('О методе', true)}
+    ${h('Как это работает')}${EnergyInfo.intro.map((p) => `<p>${p}</p>`).join('')}
+    ${h('Дыхание и ритмы мозга')}${EnergyInfo.brainRhythms.map((p) => `<p class="muted">${p}</p>`).join('')}
+    ${h('Что происходит в процессе')}${EnergyInfo.process.map((p) => `<p>${p}</p>`).join('')}
+    ${h('Результаты практики')}${EnergyInfo.results.map((p) => `<p>${p}</p>`).join('')}
+    ${h('Научное подтверждение')}${EnergyInfo.science.map((p) => `<p class="muted">${p}</p>`).join('')}
+    <div class="info-card warn"><h3>Противопоказания</h3>${EnergyInfo.contraindications.map((p) => `<p>${p}</p>`).join('')}</div>`;
+}
+
+function fmtMinSec(sec) { return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
+
+function screenEnergyPreset() {
+  const firstDay = Progress.energyPresetFirstDay;
+  const today = todayEpoch();
+  const premium = isPremium();
+  const unlocked = (id) => id === 'short' || (id === 'standard' && firstDay > 0 && today > firstDay) || (id === 'deep' && premium);
+  const preset = state.energyPreset || (unlocked('standard') ? 'standard' : 'short');
+  const program = energyProgramById(preset);
+  const chips = ENERGY_PRESETS.map((p) => `<button class="${p.id === preset ? 'primary' : 'ghost'} chip-btn" onclick="window.__epSelect('${p.id}')">${p.title}${unlocked(p.id) ? '' : ' 🔒'}</button>`).join('');
+  const hint = !unlocked('standard')
+    ? 'Сейчас доступна только «Короткая». На следующий день откроется «Стандарт», а «Глубокая» — в Premium.'
+    : (preset === 'deep' && !premium ? '«Глубокая» доступна в Premium.' : 'Прогрессия: «Короткая» → «Стандарт» (со следующего дня) → «Глубокая» (Premium).');
+  return `${header('Быстрый старт по этапам', true)}
+    <p class="sub">Готовая программа: настройка → разогрев → связное частое дыхание → медленное глубокое → интеграция.</p>
+    <h3>Длительность</h3>
+    <div class="row-3">${chips}</div>
+    <p class="muted">${hint}</p>
+    <p class="tag">Всего: ${Math.floor(program.totalSeconds / 60)} мин ${program.totalSeconds % 60} сек</p>
+    ${program.stages.map((s) => `<p>• ${s.title} — ${fmtMinSec(s.seconds)}</p>`).join('')}
+    <button class="primary" onclick="window.__energyStart()">Начать</button>`;
+}
+
+function screenEnergyCourse() {
+  return `${header('Прокачай свой мозг', true)}
+    <p class="sub">Аудио-практики</p>
+    <p>Поздравляем вас с решением стать участником программы «Дыхание и мозг». Мы уверены, этот курс станет для вас настоящим открытием: он поможет восстановить энергию, улучшить сон, наладить работу внимания и дать вам новый инструмент управления своим состоянием.</p>
+    <label class="field-label">Выбрать аудио-практику с устройства</label>
+    <input class="text-input" type="file" accept="audio/*" onchange="window.__pickAudio(this)" />
+    <p class="muted">Выберите аудиофайл практики — он откроется в плеере.</p>`;
+}
+
+function screenEnergyBuilder() {
+  const programs = Progress.energyPrograms;
+  const rows = programs.length
+    ? programs.map((p) => `<div class="list-row"><span class="list-col"><span class="list-t">${p.title}</span>
+        <span class="muted">${p.stages.length} этап(ов) · ${fmtMinSec(p.stages.reduce((s, x) => s + x.seconds, 0))}</span></span>
+        <button class="mini" onclick="window.__eeEdit('${p.id}')">Изменить</button>
+        <button class="mini" onclick="window.__energyPlayCustom('${p.id}')">Играть</button></div>`).join('')
+    : `<p class="muted">Пока нет своих программ. Создайте первую — задайте этапы с названием, длительностью и подсказкой.</p>`;
+  return `${header('Своё энергодыхание', true)}
+    <p class="sub">Соберите программу по этапам и запускайте её как практику.</p>
+    <button class="ghost" onclick="window.__eeNew()">＋ Создать свою программу</button>
+    <div class="list">${rows}</div>`;
+}
+
+function screenEnergyEdit() {
+  const e = state.energyEdit;
+  const modeBtns = (i, mode) => Object.keys(ENERGY_MODES).map((m) =>
+    `<button class="chip ${mode === m ? 'on' : ''}" onclick="window.__eeMode(${i},'${m}')">${ENERGY_MODES[m].label}</button>`).join('');
+  const stages = e.stages.map((s, i) => `<div class="stage-card">
+    <div class="j-top"><span class="list-t">Этап ${i + 1}</span>
+      ${e.stages.length > 1 ? `<button class="mini" onclick="window.__eeDel(${i})">Удалить</button>` : ''}</div>
+    <input class="text-input" maxlength="40" value="${s.title}" oninput="window.__eeField(${i},'title',this.value)" placeholder="Название этапа" />
+    <label class="field-label">Длительность: <span id="eeSec-${i}">${fmtMinSec(s.seconds)}</span></label>
+    <input type="range" min="5" max="1200" step="5" value="${s.seconds}" oninput="window.__eeField(${i},'seconds',this.value)" />
+    <input class="text-input" maxlength="160" value="${s.guidance}" oninput="window.__eeField(${i},'guidance',this.value)" placeholder="Подсказка" />
+    <div class="chips">${modeBtns(i, s.mode)}</div>
+    <p class="muted">${MODE_DESCRIPTIONS[s.mode]}</p>
+  </div>`).join('');
+  return `${header(e.id ? 'Изменить программу' : 'Новая программа', true)}
+    <label class="field-label">Название</label>
+    <input class="text-input" maxlength="60" value="${e.title}" oninput="window.__eeTitle(this.value)" />
+    ${stages}
+    <button class="ghost" onclick="window.__eeAdd()">＋ Добавить этап</button>
+    <button class="primary" onclick="window.__eeSave()">Сохранить</button>
+    ${e.id ? '<button class="ghost" onclick="window.__eeDelete()">Удалить программу</button>' : ''}`;
+}
+
+function partnerLinksHtml() {
+  const premium = isPremium();
+  return `<h3>Партнёрские бонусы</h3>
+    <button class="ghost" onclick="window.__openUrl('${EnergyPartners.CLUB_URL}')">Закрытый клуб</button>
+    <button class="ghost" onclick="window.__openUrl('${EnergyPartners.COURSE_URL}')">Курсы и тарифы</button>
+    ${premium
+      ? `<div class="copy-row"><span class="tag">Промокод: ${EnergyPartners.PROMO}</span><button class="mini" onclick="window.__copy('${EnergyPartners.PROMO}')">Копировать</button></div>`
+      : `<p class="muted">Промокод школы энергодыхания на скидку курсов — в Premium.</p><button class="ghost" onclick="window.__go('premium')">Открыть купон в Premium</button>`}`;
+}
+
+function stageAt(program, elapsed) {
+  let acc = 0, idx = 0;
+  for (let i = 0; i < program.stages.length; i++) {
+    if (elapsed < acc + program.stages[i].seconds) { idx = i; return { idx, acc, stage: program.stages[i] }; }
+    acc += program.stages[i].seconds;
+    idx = i;
+  }
+  return { idx, acc: acc - (program.stages[idx] ? program.stages[idx].seconds : 0), stage: program.stages[idx] };
+}
+
+function screenEnergyPlayer() {
+  const program = state.energyProgram;
+  if (!program) return `${header('Энергодыхание', true)}<p>Программа не найдена.</p>`;
+  if (state.epFinished) {
+    return `${header('Энергодыхание', true)}
+      <div class="done"><div class="done-ico">🔷</div><h2>Готово!</h2>
+      <p>Энергодыхание · ${program.presetTitle} · ${Math.floor(program.totalSeconds / 60)} мин</p>
+      <p class="muted">Побудь в тишине пару минут.</p>
+      <button class="primary" onclick="window.__epExit()">Назад</button></div>`;
+  }
+  const cur = stageAt(program, state.epElapsed || 0);
+  const color = ENERGY_MODES[cur.stage.mode].color;
+  const list = program.stages.map((s, i) => `<div class="ep-item ${i === cur.idx ? 'on' : ''}" id="epItem-${i}">${fmtMinSec(s.seconds)} &nbsp; ${s.title}</div>`).join('');
+  return `<div class="session">
+    <div class="s-top"><button class="back light" onclick="window.__epExit()">‹</button>
+      <span class="s-title">Энергодыхание · ${program.presetTitle}</span>
+      <span class="s-remain" id="epRemain">${fmtClock(program.totalSeconds - (state.epElapsed || 0))}</span></div>
+    <div class="ep-orb-wrap">
+      <div class="ep-orb" id="epOrb" style="background:${color}"><div class="orb-inner"><span id="epStage">${cur.stage.title}</span>
+        <span class="orb-left" id="epStageLeft">${cur.stage.seconds - (state.epElapsed - cur.acc)}</span></div></div>
+    </div>
+    <p class="ep-guide" id="epGuide">${cur.stage.guidance}</p>
+    <div class="overall"><div class="overall-fill" id="epFill" style="width:${((state.epElapsed || 0) / program.totalSeconds * 100).toFixed(1)}%"></div></div>
+    <div class="s-actions">
+      <button class="primary" id="epPause" onclick="window.__epPause()">Пауза</button>
+      <button class="ghost" onclick="window.__epSkip()">Пропустить</button>
+    </div>
+    ${toggleRow('Музыка', state.epMusic !== false, 'window.__epMusic')}
+    <div class="ep-list">${list}</div>
+    ${partnerLinksHtml()}
+  </div>`;
+}
+
+function epTick() {
+  const program = state.energyProgram;
+  if (!program || !state.epRunning) return;
+  state.epElapsed += 1;
+  if (state.epElapsed >= program.totalSeconds) { state.epElapsed = program.totalSeconds; epFinish(); return; }
+  const cur = stageAt(program, state.epElapsed);
+  const color = ENERGY_MODES[cur.stage.mode].color;
+  const orb = document.getElementById('epOrb');
+  if (orb) orb.style.background = color;
+  const st = document.getElementById('epStage'); if (st) st.textContent = cur.stage.title;
+  const sl = document.getElementById('epStageLeft'); if (sl) sl.textContent = cur.stage.seconds - (state.epElapsed - cur.acc);
+  const gd = document.getElementById('epGuide'); if (gd) gd.textContent = cur.stage.guidance;
+  const rm = document.getElementById('epRemain'); if (rm) rm.textContent = fmtClock(program.totalSeconds - state.epElapsed);
+  const fl = document.getElementById('epFill'); if (fl) fl.style.width = (state.epElapsed / program.totalSeconds * 100).toFixed(1) + '%';
+  program.stages.forEach((s, i) => {
+    const el = document.getElementById('epItem-' + i);
+    if (el) el.classList.toggle('on', i === cur.idx);
+  });
+}
+
+function startEpTimer() {
+  if (epTimer) clearInterval(epTimer);
+  epTimer = setInterval(epTick, 1000);
+}
+
+function epFinish() {
+  if (epTimer) { clearInterval(epTimer); epTimer = null; }
+  stopBg();
+  state.epFinished = true;
+  state.epRunning = false;
+  Progress.addSessionLog({
+    patternId: 'energy_' + state.energyProgram.presetId, patternName: 'Энергодыхание',
+    startedAt: state.epStartedAt || Date.now(), seconds: state.energyProgram.totalSeconds,
+    completed: true, dayEpochDay: todayEpoch(),
+  });
+  Progress.save();
+  render();
+}
+
+// ---------- матрица Гаряева ----------
+function screenMatrix() {
+  return `${header('Матрица Гаряева', true)}
+    ${MatrixBase.intro.map((p) => `<p class="muted">${p}</p>`).join('')}
+    <h3>Аудио-матрицы</h3>
+    <input class="text-input" type="file" accept="audio/*" onchange="window.__pickAudio(this)" />
+    <p class="muted">Выберите аудио-матрицу с устройства — она откроется в плеере.</p>
+    <h3>Программы</h3>
+    ${MatrixBase.entries.map((e) => `<div class="info-card"><h3>${e.title}</h3><p>${e.desc}</p></div>`).join('')}
+    <p class="muted">${MatrixBase.disclaimer}</p>`;
+}
+
+// ---------- универсальный аудиоплеер (файл с устройства) ----------
+function screenAudio() {
+  const name = state.audioName || 'Аудио';
+  return `${header('Аудио', true)}
+    <p class="sub">${name}</p>
+    <label class="field-label">Позиция</label>
+    <input type="range" id="audioSeek" min="0" max="1000" value="0" oninput="window.__audioSeek(this.value)" />
+    <div class="row-2"><span class="muted" id="audioPos">0:00</span><span class="muted" id="audioDur" style="margin-left:auto">0:00</span></div>
+    <button class="primary" id="audioBtn" onclick="window.__audioToggle()">Пауза</button>
+    <button class="ghost" onclick="window.__audioRestart()">Сначала</button>
+    <p class="muted">Прослушивайте в спокойной обстановке, лучше в наушниках. При дискомфорте сделайте паузу.</p>`;
+}
+
+function startAudioPoll() {
+  stopAudioPoll();
+  audioPoll = setInterval(() => {
+    if (!extEl) return;
+    const d = extEl.duration || 0;
+    const p = extEl.currentTime || 0;
+    const seek = document.getElementById('audioSeek');
+    if (seek && d > 0 && !seek.dataset.dragging) seek.value = Math.round(p / d * 1000);
+    const pos = document.getElementById('audioPos'); if (pos) pos.textContent = fmtClock(p);
+    const dur = document.getElementById('audioDur'); if (dur) dur.textContent = fmtClock(d);
+    const btn = document.getElementById('audioBtn'); if (btn) btn.textContent = extEl.paused ? 'Играть' : 'Пауза';
+  }, 500);
+}
+function stopAudioPoll() { if (audioPoll) { clearInterval(audioPoll); audioPoll = null; } }
+
 // ---------- прогресс ----------
 function screenProgress() {
   const d = Progress.data;
@@ -784,6 +1046,15 @@ function render() {
   else if (state.screen === 'profile') html = screenProfile();
   else if (state.screen === 'journalEditor') html = screenJournalEditor();
   else if (state.screen === 'stats') html = screenStats();
+  else if (state.screen === 'energy') html = screenEnergy();
+  else if (state.screen === 'energyAbout') html = screenEnergyAbout();
+  else if (state.screen === 'energyPreset') html = screenEnergyPreset();
+  else if (state.screen === 'energyCourse') html = screenEnergyCourse();
+  else if (state.screen === 'energyBuilder') html = screenEnergyBuilder();
+  else if (state.screen === 'energyEdit') html = screenEnergyEdit();
+  else if (state.screen === 'energyPlayer') html = screenEnergyPlayer();
+  else if (state.screen === 'matrix') html = screenMatrix();
+  else if (state.screen === 'audio') html = screenAudio();
   if (state.rename) html += renameModalHtml();
   app.innerHTML = html;
 }
@@ -796,6 +1067,9 @@ window.__back = () => {
   if (s === 'knowledgeDetail') go('knowledge');
   else if (s === 'journalEditor' || s === 'stats') go('profile');
   else if (s === 'wallet') go('profile');
+  else if (s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse' || s === 'energyBuilder') go('energy');
+  else if (s === 'energyEdit') go('energyBuilder');
+  else if (s === 'audio') { stopAudioPoll(); if (extEl) extEl.pause(); go(state.audioBack || 'home'); }
   else if (s === 'music' || s === 'solfeggio' || s === 'playlist') go(state.session ? 'session' : 'home');
   else go('home');
 };
@@ -862,6 +1136,130 @@ window.__deleteCustom = async (id) => {
   await Progress.save();
   go('home');
 };
+
+// ---------- энергодыхание / матрица ----------
+window.__openEnergy = () => go('energy');
+window.__openMatrix = () => go('matrix');
+window.__energyAck = (v) => { state.energyAck = v; render(); };
+window.__energyAbout = () => go('energyAbout');
+window.__energyPreset = () => go('energyPreset');
+window.__energyCourse = () => { if (state.energyAck) go('energyCourse'); };
+window.__energyBuilder = () => { if (state.energyAck) go('energyBuilder'); };
+window.__openUrl = (url) => TG.openLink(url);
+window.__copy = (text) => {
+  try { navigator.clipboard.writeText(text); alert('Промокод скопирован'); }
+  catch (e) { alert('Промокод: ' + text); }
+};
+window.__epSelect = (id) => {
+  const firstDay = Progress.energyPresetFirstDay, today = todayEpoch(), premium = isPremium();
+  const unlocked = id === 'short' || (id === 'standard' && firstDay > 0 && today > firstDay) || (id === 'deep' && premium);
+  if (!unlocked) { go('premium'); return; }
+  state.energyPreset = id;
+  render();
+};
+window.__energyStart = () => {
+  const preset = state.energyPreset || 'short';
+  if (preset === 'short') { Progress.setEnergyFirstDay(todayEpoch()); Progress.save(); }
+  startEnergy(energyProgramById(preset));
+};
+window.__energyPlayCustom = (id) => {
+  const p = Progress.getEnergyProgram(id);
+  if (!p) return;
+  startEnergy({ presetId: p.id, presetTitle: p.title, title: p.title, totalSeconds: p.stages.reduce((s, x) => s + x.seconds, 0), stages: p.stages });
+};
+function startEnergy(program) {
+  Audio.unlock();
+  state.energyProgram = program;
+  state.epElapsed = 0;
+  state.epRunning = true;
+  state.epFinished = false;
+  state.epMusic = true;
+  state.epStartedAt = Date.now();
+  go('energyPlayer');
+  playBg(MusicLibrary.default.id, 0.6);
+  startEpTimer();
+}
+window.__epPause = () => {
+  state.epRunning = !state.epRunning;
+  if (bgEl) { if (state.epRunning) bgEl.play().catch(() => {}); else bgEl.pause(); }
+  const b = document.getElementById('epPause');
+  if (b) b.textContent = state.epRunning ? 'Пауза' : 'Продолжить';
+};
+window.__epSkip = () => {
+  const program = state.energyProgram;
+  const cur = stageAt(program, state.epElapsed);
+  state.epElapsed = cur.acc + cur.stage.seconds;
+  if (state.epElapsed >= program.totalSeconds) { state.epElapsed = program.totalSeconds; epFinish(); return; }
+  epTick();
+};
+window.__epMusic = (v) => { state.epMusic = v; if (bgEl) bgEl.volume = v ? 0.6 : 0; };
+window.__epExit = () => {
+  if (epTimer) { clearInterval(epTimer); epTimer = null; }
+  stopBg();
+  state.epFinished = false;
+  state.epRunning = false;
+  go('energy');
+};
+window.__eeNew = () => {
+  state.energyEdit = {
+    id: '', title: 'Моё энергодыхание',
+    stages: [
+      { title: 'Настройка', seconds: 45, guidance: 'Дыши спокойно, расслабься.', mode: 'CALM' },
+      { title: 'Связное частое дыхание', seconds: 300, guidance: 'Дыши связно и часто, без пауз.', mode: 'FAST' },
+      { title: 'Интеграция', seconds: 120, guidance: 'Дыши спокойно, расслабься.', mode: 'INTEGRATE' },
+    ],
+  };
+  go('energyEdit');
+};
+window.__eeEdit = (id) => {
+  const p = Progress.getEnergyProgram(id);
+  if (!p) return;
+  state.energyEdit = { id: p.id, title: p.title, stages: p.stages.map((s) => ({ ...s })) };
+  go('energyEdit');
+};
+window.__eeTitle = (v) => { state.energyEdit.title = v; };
+window.__eeField = (i, field, v) => {
+  const st = state.energyEdit.stages[i];
+  if (field === 'seconds') {
+    st.seconds = Math.min(1200, Math.max(5, (Math.round(parseInt(v, 10) / 5) * 5) || 5));
+    const el = document.getElementById('eeSec-' + i);
+    if (el) el.textContent = fmtMinSec(st.seconds);
+  } else st[field] = v;
+};
+window.__eeMode = (i, mode) => { state.energyEdit.stages[i].mode = mode; render(); };
+window.__eeAdd = () => { state.energyEdit.stages.push({ title: 'Новый этап', seconds: 60, guidance: '', mode: 'CALM' }); render(); };
+window.__eeDel = (i) => { const s = state.energyEdit.stages; if (s.length > 1) { s.splice(i, 1); render(); } };
+window.__eeSave = async () => {
+  const e = state.energyEdit;
+  Progress.upsertEnergyProgram({
+    id: e.id || undefined,
+    title: (e.title || '').trim() || 'Моё энергодыхание',
+    stages: e.stages.map((s) => ({ title: s.title, seconds: s.seconds, guidance: s.guidance, mode: s.mode })),
+  });
+  await Progress.save();
+  go('energyBuilder');
+};
+window.__eeDelete = async () => {
+  if (!confirm('Удалить программу?')) return;
+  Progress.deleteEnergyProgram(state.energyEdit.id);
+  await Progress.save();
+  go('energyBuilder');
+};
+window.__pickAudio = (input) => {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (extEl) extEl.pause();
+  extEl = new window.Audio();
+  extEl.src = URL.createObjectURL(f);
+  state.audioName = f.name.replace(/\.[^.]+$/, '');
+  state.audioBack = state.screen;
+  extEl.play().catch(() => {});
+  go('audio');
+  startAudioPoll();
+};
+window.__audioToggle = () => { if (!extEl) return; if (extEl.paused) extEl.play(); else extEl.pause(); };
+window.__audioSeek = (v) => { if (!extEl) return; const d = extEl.duration || 0; if (d > 0) extEl.currentTime = (parseInt(v, 10) / 1000) * d; };
+window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play(); } };
 
 // ---------- сессия ----------
 window.__start = () => {
@@ -1137,7 +1535,9 @@ function withTimeout(p, ms) {
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
     if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
-        || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'profile' || s === 'stats') {
+        || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'profile' || s === 'stats'
+        || s === 'energy' || s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse'
+        || s === 'energyBuilder' || s === 'matrix') {
       render();
       go(s);
     } else if (s === 'session') {
