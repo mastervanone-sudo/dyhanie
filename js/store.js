@@ -36,6 +36,8 @@ function defaults() {
     achievements: [],
     premium: false,
     wallet: null,
+    onboardingSeen: false,
+    customPatterns: [],
   };
 }
 
@@ -159,6 +161,56 @@ class ProgressStore {
 
   setPremium(v) { this.data.premium = !!v; }
   setWallet(addr) { this.data.wallet = addr || null; }
+
+  setOnboardingSeen(v) { this.data.onboardingSeen = !!v; }
+
+  // ---------- свои ритмы ----------
+  get customPatterns() { return this.data.customPatterns || []; }
+  getCustom(id) { return this.customPatterns.find((p) => p.id === id) || null; }
+
+  addCustom(p) {
+    const id = p.id || 'custom_' + Date.now().toString(36);
+    const item = normalizeCustom(p, id);
+    this.data.customPatterns = this.customPatterns.filter((x) => x.id !== id).concat(item);
+    return item;
+  }
+
+  deleteCustom(id) {
+    this.data.customPatterns = this.customPatterns.filter((x) => x.id !== id);
+  }
+}
+
+export function isCustomPatternId(id) {
+  return typeof id === 'string' && id.startsWith('custom_');
+}
+
+function normalizeCustom(p, id) {
+  const inhaleSec = clampSec(p.inhaleSec, 1);
+  const holdInSec = clampSec(p.holdInSec, 0);
+  const exhaleSec = clampSec(p.exhaleSec, 1);
+  const holdOutSec = clampSec(p.holdOutSec, 0);
+  const minMinutes = Math.max(1, Math.round(p.minMinutes || 2));
+  const maxMinutes = Math.max(minMinutes, Math.round(p.maxMinutes || 20));
+  const defaultMinutes = Math.min(maxMinutes, Math.max(minMinutes, Math.round(p.defaultMinutes || 5)));
+  const scheme = [inhaleSec, holdInSec, exhaleSec, holdOutSec].filter((x) => x > 0).join('·');
+  return {
+    id,
+    name: (p.name || 'Свой ритм').trim().slice(0, 40),
+    goal: p.goal || 'FOCUS',
+    inhaleSec, holdInSec, exhaleSec, holdOutSec,
+    defaultMinutes, minMinutes, maxMinutes,
+    shortDescription: p.shortDescription || ('Свой ритм ' + scheme),
+    longDescription: p.longDescription || 'Ваш собственный дыхательный ритм. Настраивайте фазы под своё состояние.',
+    benefits: p.benefits || [],
+    scienceText: p.scienceText || '',
+    custom: true,
+  };
+}
+
+function clampSec(v, min) {
+  const n = Number(v);
+  if (!isFinite(n)) return min;
+  return Math.min(30, Math.max(min, Math.round(n * 10) / 10));
 }
 
 export const Progress = new ProgressStore();
