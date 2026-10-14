@@ -119,3 +119,47 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 2px
 .done-ico { font-size: 56px; }
 .done-xp { font-size: 28px; font-weight: 700; color: var(--accent2); margin: 12px 0; }
 .toast-ach { background: var(--card); border-radius: 12px; padding: 12px; margin: 8px 0; border: 1px solid var(--accent); }
+
+/* онбординг */
+.onb { padding-top: 16px; }
+.onb-title { font-size: 30px; line-height: 1.2; margin: 8px 0 18px; }
+.info-card { background: var(--card); border-radius: 16px; padding: 16px; margin: 12px 0; }
+.info-card h3 { margin: 0 0 6px; }
+.info-card p { margin: 0; color: var(--text); font-size: 14px; }
+.info-card.warn { border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
+.info-card.warn h3 { color: var(--gold); }
+.check-row { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted); }
+.check-row input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+/* карточка-хаб */
+.hub-card {
+  display: flex; gap: 14px; align-items: center; width: 100%; text-align: left;
+  background: var(--card); border: 1px solid #1c4a54; color: var(--text);
+  border-radius: 16px; padding: 16px; margin: 4px 0 12px; cursor: pointer;
+}
+.hub-card:active { background: var(--card2); }
+.hub-ico { font-size: 30px; }
+.hub-t { font-size: 18px; font-weight: 600; }
+.hub-d { color: var(--muted); font-size: 14px; line-height: 1.35; margin-top: 2px; }
+.hub-m { color: var(--accent2); font-size: 12px; margin-top: 4px; }
+
+.card-meta { color: var(--accent2); font-size: 12px; margin-top: 8px; }
+
+/* диаграмма фаз */
+.phase-diagram {
+  background: var(--card); border-radius: 12px; padding: 14px 16px; margin: 12px 0;
+  color: var(--accent2); font-weight: 600; font-size: 15px;
+}
+
+/* редактор */
+.field-label { display: block; margin: 16px 0 2px; color: var(--text); }
+.field-label span { color: var(--accent2); font-weight: 600; }
+.text-input {
+  width: 100%; padding: 14px; border-radius: 12px; background: var(--card);
+  border: 1px solid #1c4a54; color: var(--text); font-size: 16px; margin-top: 6px;
+}
+.row-2 { display: flex; gap: 10px; }
+.row-3 { display: flex; gap: 8px; }
+.row-2 .ghost, .row-3 .ghost, .row-3 .primary { margin-top: 0; }
+.row-3 .chip-btn { flex: 1; padding: 12px 6px; font-size: 14px; }
+.cycle-line { text-align: center; color: var(--accent2); font-weight: 600; margin: 12px 0 4px; }
