@@ -36,6 +36,18 @@ function findPattern(id) {
 
 function isPremium() { return !!Progress.data.premium; }
 
+function applyTheme() {
+  document.documentElement.classList.toggle('light', !!Progress.data.lightTheme);
+}
+
+function newJournal(extra) {
+  return Object.assign({
+    id: 0, createdAt: Date.now(), dayEpochDay: todayEpoch(),
+    patternName: null, seconds: 0,
+    calm: 0, energy: 0, focus: 0, tags: [], text: '', favorite: false,
+  }, extra || {});
+}
+
 function applySessionToAudio() {
   const s = Progress.session;
   Audio.musicOn = s.musicOn;
@@ -68,7 +80,7 @@ function navBar() {
   return `<nav class="tabbar">
     ${item('home', 'Практики', '🫁')}
     ${item('progress', 'Прогресс', '⭐')}
-    ${item('wallet', 'Кошелёк', '💎')}
+    ${item('profile', 'Профиль', '👤')}
     ${item('premium', 'Premium', '👑')}
   </nav>`;
 }
@@ -114,7 +126,10 @@ function screenHome() {
     ? custom.map(patternCard).join('')
     : `<p class="muted">Создайте свой ритм — задайте длительность вдоха, задержек и выдоха.</p>`;
 
-  return `${header('Дыхательные практики')}
+  return `<header class="hdr">
+      <h1>Дыхательные практики</h1>
+      <button class="avatar-btn" style="margin-left:auto" onclick="window.__go('profile')">👤</button>
+    </header>
     <p class="sub">Привет, ${TG.name()}. Выберите ритм под своё состояние.</p>
     <div class="stats-row">
       <div class="stat"><b>${Progress.level}</b><span>уровень</span></div>
@@ -427,6 +442,268 @@ function screenKnowledgeDetail() {
     ${a.paragraphs.map((p) => `<p>${p}</p>`).join('')}`;
 }
 
+// ---------- профиль ----------
+const JOURNAL_TAGS = ['Спокойствие', 'Легче', 'Тревога ушла', 'Ясность', 'Прилив сил', 'Сонливость', 'Напряжение', 'Тепло', 'Благодарность', 'Сосредоточенность'];
+const JOURNAL_PROMPTS = ['Что заметили в теле?', 'Что изменилось в мыслях?', 'Что забираете с этого дыхания?', 'Одна мысль, которую хочется сохранить', 'Что отпустили?'];
+
+function rankForLevel(level) {
+  if (level <= 4) return 'Новичок';
+  if (level <= 9) return 'Ученик';
+  if (level <= 19) return 'Практик';
+  if (level <= 29) return 'Дышащий';
+  if (level <= 39) return 'Мастер дыхания';
+  if (level <= 49) return 'Хранитель ритма';
+  if (level <= 59) return 'Гуру дыхания';
+  if (level <= 69) return 'Мастер энергии';
+  if (level <= 79) return 'Хранитель энергии';
+  if (level <= 89) return 'Магистр дыхания';
+  if (level <= 99) return 'Просветлённый';
+  return 'Легенда';
+}
+
+function epochDayOf(date) {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+}
+function todayEpoch() { return epochDayOf(new Date()); }
+
+function profileName() {
+  return Progress.data.profileName || TG.name() || 'Практик';
+}
+function avatarInitial() {
+  const n = profileName().trim();
+  return n ? n[0].toUpperCase() : 'Д';
+}
+function avatarInner() {
+  const u = TG.user;
+  const photo = u && u.photo_url;
+  if (photo) return `<img src="${photo}" alt="avatar">`;
+  return avatarInitial();
+}
+
+function buildDayMap() {
+  const days = {};
+  for (const s of Progress.sessionsLog) {
+    const d = days[s.dayEpochDay] || (days[s.dayEpochDay] = { minutes: 0, sessions: 0, completed: 0, opens: 0 });
+    d.sessions += 1;
+    d.minutes += Math.floor(s.seconds / 60);
+    if (s.completed) d.completed += 1;
+  }
+  for (const k of Object.keys(Progress.openDays)) {
+    const day = days[k] || (days[k] = { minutes: 0, sessions: 0, completed: 0, opens: 0 });
+    day.opens = Progress.openDays[k];
+  }
+  return days;
+}
+
+function favoritePattern() {
+  const counts = {};
+  for (const s of Progress.sessionsLog) counts[s.patternName] = (counts[s.patternName] || 0) + 1;
+  let best = null, bestN = 0;
+  for (const k of Object.keys(counts)) if (counts[k] > bestN) { best = k; bestN = counts[k]; }
+  return best;
+}
+
+function screenProfile() {
+  const d = Progress.data;
+  const level = Progress.level;
+  const rank = rankForLevel(level);
+  const ring = Progress.xpIntoLevel;
+  const fav = favoritePattern() || '—';
+  const premium = Progress.data.premium;
+  const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  const days = buildDayMap();
+
+  const journalRows = Progress.journal.length
+    ? Progress.journal.map((e) => {
+        const ratings = [];
+        if (e.calm) ratings.push(`Спокойствие ${e.calm}`);
+        if (e.energy) ratings.push(`Энергия ${e.energy}`);
+        if (e.focus) ratings.push(`Фокус ${e.focus}`);
+        const tags = (e.tags || []).join(' · ');
+        return `<div class="j-row">
+          <div class="j-top">
+            <div><div class="muted">${ruDate(e.dayEpochDay)}</div>
+            ${e.patternName ? `<div>${e.patternName}</div>` : ''}</div>
+            <button class="star ${e.favorite ? 'on' : ''}" onclick="window.__jFav('${e.id}')">★</button>
+          </div>
+          ${ratings.length ? `<div class="j-meta">${ratings.join(' · ')}</div>` : ''}
+          ${tags ? `<div class="muted">${tags}</div>` : ''}
+          ${e.text ? `<div class="j-text">${e.text}</div>` : ''}
+          <button class="mini" onclick="window.__openJournal('${e.id}')">Открыть</button>
+        </div>`;
+      }).join('')
+    : '<p class="muted">Записывайте, как вы себя чувствуете и какие приходят мысли после практики.</p>';
+
+  return `${header('Профиль', true)}
+    <div class="prof-head">
+      <div class="ring" style="--p:${ring}">
+        <button class="avatar" onclick="window.__go('profile')">${avatarInner()}</button>
+      </div>
+      <div class="prof-id">
+        <div class="prof-name">${profileName()}</div>
+        <div class="prof-rank">${rank} · уровень ${level}</div>
+        <div class="muted">${level >= 100 ? 'Максимальный уровень' : `до следующего уровня ${Progress.xpToNext} XP`}</div>
+      </div>
+      <button class="mini" onclick="window.__openRename()">Имя</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><b>${d.sessions}</b><span>практик</span></div>
+      <div class="stat"><b>${Math.round(d.totalMinutes)}</b><span>минут</span></div>
+      <div class="stat"><b>${d.streak}</b><span>серия</span></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><b>${d.bestStreak}</b><span>рекорд</span></div>
+      <div class="stat wide"><b>${fav}</b><span>любимый ритм</span></div>
+    </div>
+    ${toggleRow('Светлая тема', Progress.data.lightTheme, 'window.__setLightTheme')}
+    <button class="hub-card" onclick="window.__go('premium')">
+      <div class="hub-ico">👑</div>
+      <div><div class="hub-t">Premium</div>
+      <div class="hub-d">${premium ? 'Подписка активна' : 'Свои треки, плейлисты и курс без ограничений'}</div></div>
+    </button>
+    <button class="hub-card" onclick="window.__go('wallet')">
+      <div class="hub-ico">💎</div>
+      <div><div class="hub-t">Кошелёк TON</div>
+      <div class="hub-d">NFT-достижения и оплата в TON</div></div>
+    </button>
+    <h3>Дневник состояний</h3>
+    <button class="ghost" onclick="window.__addJournal()">＋ Запись о состоянии</button>
+    <div class="j-list">${journalRows}</div>
+    <h3>Календарь активности</h3>
+    ${activityCalendarHtml(month, days)}
+    ${state.selectedDay ? dayDetailsHtml(state.selectedDay, days) : ''}
+    <button class="ghost" onclick="window.__go('stats')">Вся история практик</button>
+    ${navBar()}`;
+}
+
+function ruDate(epochDay) {
+  const dt = new Date(epochDay * 86400000);
+  return dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function ruMonth(y, m) {
+  const dt = new Date(Date.UTC(y, m, 1));
+  const s = dt.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function intensity(minutes) {
+  if (minutes >= 10) return .9;
+  if (minutes >= 5) return .6;
+  if (minutes >= 1) return .4;
+  return .25;
+}
+
+function activityCalendarHtml(month, days) {
+  const firstDay = new Date(Date.UTC(month.y, month.m, 1));
+  const offset = (firstDay.getUTCDay() + 6) % 7; // Пн=0
+  const len = new Date(Date.UTC(month.y, month.m + 1, 0)).getUTCDate();
+  const today = todayEpoch();
+  const cells = [];
+  for (let i = 0; i < offset; i++) cells.push('');
+  for (let d = 1; d <= len; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push('');
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  const dow = '<div class="cal-dow">' + ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((x) => `<span>${x}</span>`).join('') + '</div>';
+  const body = weeks.map((w) => '<div class="cal-week">' + w.map((d) => {
+    if (!d) return '<span class="cal-cell"></span>';
+    const epoch = epochDayOf(new Date(Date.UTC(month.y, month.m, d)));
+    const st = days[epoch];
+    const practiced = st && st.sessions > 0;
+    const opened = st && st.opens > 0;
+    const isToday = epoch === today;
+    const sel = state.selectedDay === epoch;
+    const cls = ['cal-cell'];
+    if (practiced) cls.push('done');
+    else if (opened) cls.push('opened');
+    if (isToday) cls.push('today');
+    if (sel) cls.push('sel');
+    const alpha = practiced ? `style="--a:${intensity(st.minutes)}"` : '';
+    return `<button class="${cls.join(' ')}" ${alpha} onclick="window.__selDay(${epoch})">${d}</button>`;
+  }).join('') + '</div>').join('');
+  return `<div class="cal">
+    <div class="cal-head">
+      <button class="mini" onclick="window.__calPrev()">‹</button>
+      <span>${ruMonth(month.y, month.m)}</span>
+      <button class="mini" onclick="window.__calNext()">›</button>
+    </div>
+    ${dow}${body}
+    <p class="muted">Насыщеннее — больше минут практики. Серый — только открывал приложение.</p>
+  </div>`;
+}
+
+function dayDetailsHtml(epoch, days) {
+  const st = days[epoch];
+  const items = Progress.sessionsLog.filter((s) => s.dayEpochDay === epoch).sort((a, b) => b.startedAt - a.startedAt);
+  const rows = items.length
+    ? items.map((s) => `<div class="list-row"><span class="list-col"><span class="list-t">${s.patternName}</span>
+        <span class="muted">${ruTime(s.startedAt)}</span></span>
+        <span class="tag">${durationText(s.seconds)} · ${s.completed ? 'полностью' : 'прервано'}</span></div>`).join('')
+    : `<p class="muted">Практик в этот день нет.${st && st.opens ? ` Открытий приложения: ${st.opens}.` : ''}</p>`;
+  return `<div class="day-details"><h3>${ruDate(epoch)}</h3>${rows}${items.length && st && st.opens ? `<p class="muted">Открытий приложения: ${st.opens}</p>` : ''}</div>`;
+}
+
+function durationText(sec) { return sec >= 60 ? `${Math.floor(sec / 60)} мин` : `${sec} сек`; }
+function ruTime(ms) {
+  return new Date(ms).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function screenJournalEditor() {
+  const j = state.journal;
+  const prompt = state.journalPrompt;
+  const tags = JOURNAL_TAGS.map((t) => `<button class="chip ${j.tags.includes(t) ? 'on' : ''}" onclick="window.__jTag('${t}')">${t}</button>`).join('');
+  return `${header(j.id ? 'Запись дневника' : 'Новая запись', true)}
+    <p class="muted">${new Date(j.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+    ${j.patternName ? `<p class="tag">Практика: ${j.patternName}${j.seconds > 0 ? ` · ${Math.floor(j.seconds / 60)} мин` : ''}</p>` : ''}
+    <h3>Как вы себя чувствуете?</h3>
+    ${ratingRow('Спокойствие', 'calm', j.calm)}
+    ${ratingRow('Энергия', 'energy', j.energy)}
+    ${ratingRow('Фокус', 'focus', j.focus)}
+    <h3>Состояния</h3>
+    <div class="chips">${tags}</div>
+    <h3>Инсайты</h3>
+    <textarea class="text-area" placeholder="${prompt}" oninput="window.__jText(this.value)">${j.text}</textarea>
+    <label class="check-row"><input type="checkbox" ${j.favorite ? 'checked' : ''} onchange="window.__jFavEdit(this.checked)"><span>В избранное ★</span></label>
+    <button class="primary" onclick="window.__jSave()">Сохранить</button>
+    ${j.id ? '<button class="ghost" onclick="window.__jDelete()">Удалить запись</button>' : ''}
+    ${navBar()}`;
+}
+
+function ratingRow(label, field, value) {
+  const dots = [1, 2, 3, 4, 5].map((i) =>
+    `<button class="rate ${i <= value ? 'on' : ''}" onclick="window.__jRate('${field}',${i})">${i}</button>`).join('');
+  return `<div class="rate-row"><span>${label}</span><div class="rates">${dots}</div></div>`;
+}
+
+function screenStats() {
+  const sessions = Progress.sessionsLog;
+  const totalMinutes = Math.round(Progress.data.totalMinutes);
+  const rows = sessions.length
+    ? sessions.map((s) => `<div class="list-row"><span class="list-col">
+        <span class="list-t">${s.patternName}</span>
+        <span class="muted">${ruDate(s.dayEpochDay)}, ${ruTime(s.startedAt)}</span></span>
+        <span class="tag">${Math.floor(s.seconds / 60)} мин · ${s.completed ? 'полностью' : 'прервано'}</span></div>`).join('')
+    : '<p class="muted">Пока нет завершённых сессий. Пройди первую практику — и здесь появится история.</p>';
+  return `${header('Статистика', true)}
+    <div class="stats-row">
+      <div class="stat"><b>${sessions.length}</b><span>сессий</span></div>
+      <div class="stat"><b>${totalMinutes}</b><span>минут</span></div>
+      <div class="stat"><b>${Progress.data.streak}</b><span>серия</span></div>
+    </div>
+    <h3>История практик</h3>
+    <div class="list">${rows}</div>`;
+}
+
+function renameModalHtml() {
+  return `<div class="sheet-backdrop" onclick="window.__closeRename()">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-head"><span>Как вас зовут?</span><button class="back" onclick="window.__closeRename()">✕</button></div>
+      <input class="text-input" id="renameInput" maxlength="30" value="${Progress.data.profileName || ''}" placeholder="${TG.name()}" />
+      <button class="primary" onclick="window.__saveName()">Сохранить</button>
+    </div>
+  </div>`;
+}
+
 // ---------- прогресс ----------
 function screenProgress() {
   const d = Progress.data;
@@ -504,6 +781,10 @@ function render() {
   else if (state.screen === 'music') html = screenMusic();
   else if (state.screen === 'solfeggio') html = screenSolfeggio();
   else if (state.screen === 'playlist') html = screenPlaylist();
+  else if (state.screen === 'profile') html = screenProfile();
+  else if (state.screen === 'journalEditor') html = screenJournalEditor();
+  else if (state.screen === 'stats') html = screenStats();
+  if (state.rename) html += renameModalHtml();
   app.innerHTML = html;
 }
 
@@ -513,6 +794,8 @@ window.__open = (id) => { const p = findPattern(id); if (p) go('detail', { patte
 window.__back = () => {
   const s = state.screen;
   if (s === 'knowledgeDetail') go('knowledge');
+  else if (s === 'journalEditor' || s === 'stats') go('profile');
+  else if (s === 'wallet') go('profile');
   else if (s === 'music' || s === 'solfeggio' || s === 'playlist') go(state.session ? 'session' : 'home');
   else go('home');
 };
@@ -587,6 +870,7 @@ window.__start = () => {
   go('session');
   Audio.startSession();
   const total = state.minutes * 60;
+  state.sessionStart = Date.now();
   let lastSec = -1;
   let accentPending = false;
   const session = new BreathSession(state.pattern, state.minutes, {
@@ -621,6 +905,11 @@ window.__start = () => {
     onDone: (summary) => {
       Audio.stopSession();
       const res = Progress.recordSession(summary);
+      Progress.addSessionLog({
+        patternId: summary.patternId, patternName: summary.patternName,
+        startedAt: state.sessionStart || Date.now(), seconds: summary.minutes * 60,
+        completed: true, dayEpochDay: todayEpoch(),
+      });
       Progress.save();
       TG.haptic('notify', 'success');
       state.session = null;
@@ -639,7 +928,19 @@ window.__pause = () => {
   if (btn) btn.textContent = paused ? 'Продолжить' : 'Пауза';
 };
 window.__stop = () => {
-  if (state.session) state.session.stop();
+  if (state.session) {
+    const elapsed = Math.round(state.session.elapsed || 0);
+    const p = state.pattern;
+    if (elapsed > 0) {
+      Progress.addSessionLog({
+        patternId: p.id, patternName: p.name,
+        startedAt: state.sessionStart || Date.now(), seconds: elapsed,
+        completed: false, dayEpochDay: todayEpoch(),
+      });
+      Progress.save();
+    }
+    state.session.stop();
+  }
   state.session = null;
   Audio.stopSession();
   go('home');
@@ -709,6 +1010,79 @@ window.__plMove = (i, dir) => {
 window.__plRemove = (i) => { const ids = currentPlaylist(); ids.splice(i, 1); savePlaylist(ids); render(); };
 window.__plAdd = (id) => { const ids = currentPlaylist(); if (!ids.includes(id)) ids.push(id); savePlaylist(ids); render(); };
 
+// ---------- профиль ----------
+window.__setLightTheme = (v) => { Progress.setLightTheme(v); applyTheme(); Progress.save(); render(); };
+window.__openRename = () => { state.rename = true; render(); };
+window.__closeRename = () => { state.rename = false; render(); };
+window.__saveName = async () => {
+  const el = document.getElementById('renameInput');
+  Progress.setName(el ? el.value : '');
+  await Progress.save();
+  state.rename = false;
+  render();
+};
+window.__calPrev = () => {
+  const m = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  let mm = m.m - 1, yy = m.y;
+  if (mm < 0) { mm = 11; yy -= 1; }
+  state.profileMonth = { y: yy, m: mm };
+  state.selectedDay = null;
+  render();
+};
+window.__calNext = () => {
+  const m = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  let mm = m.m + 1, yy = m.y;
+  if (mm > 11) { mm = 0; yy += 1; }
+  state.profileMonth = { y: yy, m: mm };
+  state.selectedDay = null;
+  render();
+};
+window.__selDay = (epoch) => { state.selectedDay = state.selectedDay === epoch ? null : epoch; render(); };
+
+// ---------- дневник ----------
+window.__addJournal = () => {
+  state.journal = newJournal();
+  state.journalPrompt = JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)];
+  go('journalEditor');
+};
+window.__openJournal = (id) => {
+  const j = Progress.getJournal(id);
+  if (!j) return;
+  state.journal = Object.assign({}, j, { tags: (j.tags || []).slice() });
+  state.journalPrompt = JOURNAL_PROMPTS[0];
+  go('journalEditor');
+};
+window.__jRate = (field, i) => { state.journal[field] = state.journal[field] === i ? 0 : i; render(); };
+window.__jTag = (t) => {
+  const arr = state.journal.tags;
+  const i = arr.indexOf(t);
+  if (i >= 0) arr.splice(i, 1); else arr.push(t);
+  render();
+};
+window.__jText = (v) => { state.journal.text = v; };
+window.__jFavEdit = (v) => { state.journal.favorite = v; };
+window.__jFav = async (id) => {
+  const j = Progress.getJournal(id);
+  if (!j) return;
+  j.favorite = !j.favorite;
+  Progress.updateJournal(j);
+  await Progress.save();
+  render();
+};
+window.__jSave = async () => {
+  const j = state.journal;
+  Progress.updateJournal(j);
+  await Progress.save();
+  TG.haptic('notify', 'success');
+  go('profile');
+};
+window.__jDelete = async () => {
+  if (!confirm('Удалить запись?')) return;
+  Progress.deleteJournal(state.journal.id);
+  await Progress.save();
+  go('profile');
+};
+
 function showDone(summary, res) {
   const ach = res.unlocked.map((id) => {
     const a = ACHIEVEMENTS.find((x) => x.id === id);
@@ -754,6 +1128,8 @@ function withTimeout(p, ms) {
     ]);
     TG.ready();
     await Progress.load();
+    applyTheme();
+    Progress.recordOpen(todayEpoch());
     applySessionToAudio();
     await STARS.syncPremium();
     TON.init(new URL('tonconnect-manifest.json', location.href).href);
@@ -761,7 +1137,7 @@ function withTimeout(p, ms) {
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
     if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
-        || s === 'music' || s === 'solfeggio' || s === 'playlist') {
+        || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'profile' || s === 'stats') {
       render();
       go(s);
     } else if (s === 'session') {

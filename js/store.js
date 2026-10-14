@@ -39,6 +39,11 @@ function defaults() {
     onboardingSeen: false,
     customPatterns: [],
     session: defaultSession(),
+    sessionsLog: [],
+    journal: [],
+    openDays: {},
+    profileName: '',
+    lightTheme: false,
   };
 }
 
@@ -105,6 +110,9 @@ class ProgressStore {
       try { this.data = Object.assign(defaults(), JSON.parse(raw)); } catch (e) { this.data = defaults(); }
     }
     this.data.session = Object.assign(defaultSession(), this.data.session || {});
+    this.data.sessionsLog = this.data.sessionsLog || [];
+    this.data.journal = this.data.journal || [];
+    this.data.openDays = this.data.openDays || {};
     this._rollDay();
     return this.data;
   }
@@ -178,6 +186,36 @@ class ProgressStore {
 
   get session() { return this.data.session; }
   setSession(patch) { Object.assign(this.data.session, patch || {}); }
+
+  // ---------- история сессий ----------
+  get sessionsLog() { return this.data.sessionsLog || []; }
+  addSessionLog(entry) {
+    this.data.sessionsLog.unshift(entry);
+    if (this.data.sessionsLog.length > 1000) this.data.sessionsLog.length = 1000;
+    return entry;
+  }
+
+  // ---------- дневник состояний ----------
+  get journal() { return this.data.journal || []; }
+  addJournal(entry) {
+    entry.id = entry.id || Date.now();
+    this.data.journal.unshift(entry);
+    return entry;
+  }
+  getJournal(id) { return this.journal.find((j) => String(j.id) === String(id)) || null; }
+  updateJournal(entry) {
+    const i = this.journal.findIndex((j) => String(j.id) === String(entry.id));
+    if (i >= 0) this.data.journal[i] = entry; else this.data.journal.unshift(entry);
+    return entry;
+  }
+  deleteJournal(id) { this.data.journal = this.journal.filter((j) => String(j.id) !== String(id)); }
+
+  // ---------- открытия приложения ----------
+  get openDays() { return this.data.openDays || {}; }
+  recordOpen(day) { this.data.openDays[day] = (this.data.openDays[day] || 0) + 1; }
+
+  setName(name) { this.data.profileName = (name || '').trim().slice(0, 30); }
+  setLightTheme(v) { this.data.lightTheme = !!v; }
 
   // ---------- свои ритмы ----------
   get customPatterns() { return this.data.customPatterns || []; }

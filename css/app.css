@@ -207,3 +207,59 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 2px
 .now-art { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; background: linear-gradient(135deg,#7C7CF8,#5EA2F7); }
 .now-meta { color: var(--accent2); font-size: 13px; margin-top: 2px; }
 .sheet h3 { margin-top: 18px; }
+
+/* профиль */
+.avatar-btn { background: var(--card); border: 0; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; color: var(--accent2); cursor: pointer; }
+.prof-head { display: flex; align-items: center; gap: 14px; margin: 8px 0 14px; }
+.ring { width: 80px; height: 80px; border-radius: 50%; padding: 5px; flex: 0 0 auto;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), rgba(255,255,255,.12) 0); }
+.avatar { width: 100%; height: 100%; border-radius: 50%; border: 0; cursor: pointer; overflow: hidden;
+  background: var(--accent); color: #04231d; font-size: 26px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.prof-id { flex: 1; min-width: 0; }
+.prof-name { font-size: 22px; font-weight: 700; }
+.prof-rank { color: var(--accent2); font-weight: 600; font-size: 14px; margin: 2px 0; }
+.stat.wide { flex: 2; }
+.stat.wide b { font-size: 16px; }
+
+/* дневник */
+.j-list { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.j-row { background: var(--card); border-radius: 14px; padding: 14px; }
+.j-top { display: flex; align-items: flex-start; gap: 10px; }
+.j-top > div:first-child { flex: 1; }
+.star { background: var(--card2); border: 0; width: 34px; height: 34px; border-radius: 50%; color: var(--muted); font-size: 16px; cursor: pointer; }
+.star.on { background: var(--accent); color: #04231d; }
+.j-meta { color: var(--accent2); font-size: 13px; margin-top: 8px; }
+.j-text { margin-top: 8px; line-height: 1.45; }
+
+/* оценки и чипы */
+.rate-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.rates { display: flex; gap: 6px; }
+.rate { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--card2); color: var(--muted); font-weight: 600; cursor: pointer; }
+.rate.on { background: var(--accent); color: #04231d; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.chip { background: var(--card); border: 1px solid #1c4a54; color: var(--text); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+.chip.on { background: var(--accent); color: #04231d; border-color: var(--accent); }
+.text-area { width: 100%; min-height: 130px; background: var(--card); border: 1px solid #1c4a54; color: var(--text); border-radius: 12px; padding: 12px; font: inherit; resize: vertical; }
+
+/* календарь */
+.cal { background: var(--card); border-radius: 16px; padding: 14px; margin: 8px 0; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+.cal-dow, .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-dow span { text-align: center; font-size: 12px; color: var(--muted); padding: 4px 0; }
+.cal-cell { aspect-ratio: 1; border: 0; background: transparent; color: var(--text); border-radius: 50%; cursor: pointer; font: inherit; margin: 2px; }
+.cal-cell.done { background: color-mix(in srgb, var(--accent) calc(var(--a) * 100%), transparent); color: #04231d; font-weight: 600; }
+.cal-cell.opened { background: var(--card2); color: var(--muted); }
+.cal-cell.today { box-shadow: inset 0 0 0 1px var(--accent); }
+.cal-cell.sel { box-shadow: inset 0 0 0 2px var(--accent2); }
+.day-details { background: var(--card); border-radius: 16px; padding: 16px; margin: 8px 0; }
+.day-details .list-row { background: var(--card2); }
+
+/* светлая тема */
+html.light { --bg:#F3F8F7; --card:#FFFFFF; --card2:#E3EEEC; --accent:#1E9C8C; --accent2:#0E6F63; --text:#102A2E; --muted:#476A6F; --gold:#B8860B; }
+html.light .tabbar { background: #EAF2F1; border-top-color: #D5E4E2; }
+html.light .card, html.light .hub-card { border-color: #D5E4E2; }
+html.light .sheet { background: #F3F8F7; }
+html.light .session { background: radial-gradient(circle at 50% 38%, #DCEFEC, var(--bg) 70%); }
+html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: #06231f; }
