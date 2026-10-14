@@ -38,6 +38,17 @@ function defaults() {
     wallet: null,
     onboardingSeen: false,
     customPatterns: [],
+    session: defaultSession(),
+  };
+}
+
+function defaultSession() {
+  return {
+    musicOn: true, musicVolume: 1.0, trackId: 'cosmic_om', playlistMode: false, playlistIds: [],
+    voiceOn: true, metronomeOn: false,
+    breathOn: true, breathVolume: 0.8, breathVariant: 'recorded2',
+    solfeggioOn: true, solfeggioHz: 528, solfeggioVolume: 0.35,
+    vibrateOn: false,
   };
 }
 
@@ -93,6 +104,7 @@ class ProgressStore {
     if (raw) {
       try { this.data = Object.assign(defaults(), JSON.parse(raw)); } catch (e) { this.data = defaults(); }
     }
+    this.data.session = Object.assign(defaultSession(), this.data.session || {});
     this._rollDay();
     return this.data;
   }
@@ -163,6 +175,9 @@ class ProgressStore {
   setWallet(addr) { this.data.wallet = addr || null; }
 
   setOnboardingSeen(v) { this.data.onboardingSeen = !!v; }
+
+  get session() { return this.data.session; }
+  setSession(patch) { Object.assign(this.data.session, patch || {}); }
 
   // ---------- свои ритмы ----------
   get customPatterns() { return this.data.customPatterns || []; }

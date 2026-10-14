@@ -1,6 +1,9 @@
 import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js';
 import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js';
 import { ARTICLES, articleById } from './knowledge.js';
+import { MusicLibrary } from './music.js';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js';
+import { Audio, BREATH_VARIANTS } from './audio.js';
 import { TG, loadScript } from './telegram.js';
 import { BreathSession, fmtClock } from './session.js';
 import { TON } from './ton.js';
@@ -14,6 +17,7 @@ const state = {
   session: null,
   article: null,
   editor: null,
+  musicSheet: false,
 };
 
 // Тестовый переключатель Premium (без оплаты). ВЫКЛЮЧИ перед релизом: false.
@@ -26,9 +30,27 @@ const go = (screen, opts = {}) => {
   window.scrollTo(0, 0);
 };
 
-// Поиск практики среди встроенных и своих ритмов.
 function findPattern(id) {
   return getPattern(id) || Progress.getCustom(id);
+}
+
+function isPremium() { return !!Progress.data.premium; }
+
+function applySessionToAudio() {
+  const s = Progress.session;
+  Audio.musicOn = s.musicOn;
+  Audio.musicVolume = s.musicVolume;
+  Audio.trackId = s.trackId;
+  Audio.playlistIds = (s.playlistIds && s.playlistIds.length) ? s.playlistIds : MusicLibrary.ids();
+  Audio.playlistMode = s.playlistMode;
+  Audio.voiceOn = s.voiceOn;
+  Audio.metronomeOn = s.metronomeOn;
+  Audio.breathOn = s.breathOn;
+  Audio.breathVolume = s.breathVolume;
+  Audio.breathVariant = s.breathVariant;
+  Audio.solfeggioOn = s.solfeggioOn;
+  Audio.solfeggioHz = s.solfeggioHz;
+  Audio.solfeggioVolume = s.solfeggioVolume;
 }
 
 // ---------- общие части ----------
@@ -54,6 +76,13 @@ function navBar() {
 function goalChip(goal) {
   const g = GOALS[goal] || GOALS.FOCUS;
   return `<span class="goal" style="--c:${g.color}">${g.label}</span>`;
+}
+
+function toggleRow(label, on, handler) {
+  return `<label class="switch-row">
+    <span>${label}</span>
+    <input type="checkbox" ${on ? 'checked' : ''} onchange="${handler}(this.checked)">
+  </label>`;
 }
 
 // ---------- онбординг ----------
@@ -193,24 +222,188 @@ function phaseSlider(label, field, value) {
 }
 
 // ---------- сессия ----------
+const PHASE_COLORS = {
+  INHALE: '#6EE7D0', HOLD_IN: '#A78BFA', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
+};
+
+function cycleFraction(pattern, phaseKey, progress) {
+  const phases = [
+    ['INHALE', pattern.inhaleSec],
+    ['HOLD_IN', pattern.holdInSec],
+    ['EXHALE', pattern.exhaleSec],
+    ['HOLD_OUT', pattern.holdOutSec],
+  ].filter((x) => x[1] > 0);
+  const total = phases.reduce((s, x) => s + x[1], 0) || 1;
+  let acc = 0;
+  for (const [k, d] of phases) {
+    if (k === phaseKey) return (acc + d * Math.min(1, Math.max(0, progress))) / total;
+    acc += d;
+  }
+  return 0;
+}
+
+function scoreBarHtml(pattern) {
+  const phases = [
+    ['INHALE', pattern.inhaleSec],
+    ['HOLD_IN', pattern.holdInSec],
+    ['EXHALE', pattern.exhaleSec],
+    ['HOLD_OUT', pattern.holdOutSec],
+  ].filter((x) => x[1] > 0);
+  const total = phases.reduce((s, x) => s + x[1], 0) || 1;
+  const segs = phases.map(([k, d]) =>
+    `<div class="score-seg" style="width:${(d / total) * 100}%;background:${PHASE_COLORS[k]}"></div>`).join('');
+  return `<div class="score-bar" id="scoreBar">${segs}<div class="score-mark" id="scoreMark"></div></div>`;
+}
+
+function phaseLegendHtml(pattern) {
+  const phases = [
+    ['INHALE', 'Вдох', pattern.inhaleSec],
+    ['HOLD_IN', 'Задержка', pattern.holdInSec],
+    ['EXHALE', 'Выдох', pattern.exhaleSec],
+    ['HOLD_OUT', 'Задержка', pattern.holdOutSec],
+  ].filter((x) => x[2] > 0);
+  return `<div class="phase-legend">${phases.map(([k, label, d]) =>
+    `<span><i style="background:${PHASE_COLORS[k]}"></i>${label} ${fmtSec(d)}</span>`).join('')}</div>`;
+}
+
 function screenSession() {
+  const p = state.pattern;
+  const sheet = state.musicSheet ? musicSheetHtml(p) : '';
   return `<div class="session">
-    <div class="s-top"><button class="back light" onclick="window.__stop()">✕</button>
-      <span id="sName">${state.pattern.name}</span></div>
+    <div class="s-top">
+      <button class="back light" onclick="window.__stop()">‹</button>
+      <span class="s-title" id="sName">${p.name}</span>
+      <span class="s-remain" id="sRemain">${fmtClock(state.minutes * 60)}</span>
+    </div>
     <div class="orb-wrap">
       <div class="orb-ring"></div>
-      <div class="orb" id="orb"><span id="phase">Вдох</span></div>
+      <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
+        <span class="orb-left" id="phaseLeft">4</span></div></div>
     </div>
+    <div class="overall"><div class="overall-fill" id="overallFill" style="width:0%"></div></div>
     <div class="s-meta">
-      <div><b id="phaseLeft">4</b><span>сек в фазе</span></div>
-      <div><b id="remaining">5:00</b><span>осталось</span></div>
+      <div><b id="elapsed">0:00</b><span>время</span></div>
       <div><b id="cycles">0</b><span>циклов</span></div>
     </div>
     <div class="s-actions">
       <button class="primary" id="pauseBtn" onclick="window.__pause()">Пауза</button>
       <button class="ghost" onclick="window.__stop()">Стоп</button>
     </div>
+    <button class="ghost" onclick="window.__openMusicSheet()">♪ Музыка и партитура</button>
+    <div class="s-toggles">
+      ${toggleRow('Музыка', Progress.session.musicOn, 'window.__setMusic')}
+      ${toggleRow('Дыхание', Progress.session.breathOn, 'window.__setBreath')}
+      ${toggleRow('Голос', Progress.session.voiceOn, 'window.__setVoice')}
+      ${toggleRow('Метроном', Progress.session.metronomeOn, 'window.__setMetronome')}
+      ${toggleRow('Вибрация', Progress.session.vibrateOn, 'window.__setVibrate')}
+      ${toggleRow('Частота сольфеджио', Progress.session.solfeggioOn, 'window.__setSolfeggio')}
+    </div>
+    ${sheet}
   </div>`;
+}
+
+function musicSheetHtml(pattern) {
+  const s = Progress.session;
+  const cur = MusicLibrary.byId(s.trackId);
+  const queue = (s.playlistIds && s.playlistIds.length ? s.playlistIds : MusicLibrary.ids()).map((id) => MusicLibrary.byId(id));
+  const queueHtml = s.playlistMode ? `<h3>Очередь</h3><div class="list">${queue.map((t, i) =>
+    `<div class="list-row">${i + 1}. ${t.title}${i === Audio.currentTrackIndex() ? ' <span class="tag">играет</span>' : ''}</div>`).join('')}</div>` : '';
+  return `<div class="sheet-backdrop" onclick="window.__closeMusicSheet(event)">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-head">
+        <span>Музыкальное сопровождение</span>
+        <button class="back" onclick="window.__closeMusicSheet()">✕</button>
+      </div>
+      <div class="now-track">
+        <div class="now-art">♪</div>
+        <div><div class="list-t">${cur.title}</div>
+        <div class="muted">${cur.subtitle}, зациклен</div>
+        <div class="now-meta">${breathsPerMinute(pattern)} дых./мин · ${state.minutes} мин</div></div>
+      </div>
+      <h3>Партитура дыхания</h3>
+      ${scoreBarHtml(pattern)}
+      ${phaseLegendHtml(pattern)}
+      ${toggleRow('Музыка', s.musicOn, 'window.__setMusic')}
+      <label class="field-label">Громкость музыки</label>
+      <input type="range" min="0" max="1" step="0.01" value="${s.musicVolume}" oninput="window.__setMusicVolume(this.value)" />
+      <button class="ghost" onclick="window.__restartMusic()">Трек в начало</button>
+      <h3>Трек</h3>
+      <button class="list-row pick" onclick="window.__openMusic()">${cur.title} — ${cur.subtitle} <span class="tag">Выбрать</span></button>
+      <h3>Режим музыки</h3>
+      <div class="row-2">
+        <button class="${s.playlistMode ? 'ghost' : 'primary'}" onclick="window.__setPlaylistMode(false)">Повтор трека</button>
+        <button class="${s.playlistMode ? 'primary' : 'ghost'}" onclick="window.__setPlaylistMode(true)">По списку${isPremium() ? '' : ' 🔒'}</button>
+      </div>
+      <button class="ghost" onclick="window.__openPlaylistGate()">Настроить список треков</button>
+      ${queueHtml}
+      <h3>Частота сольфеджио</h3>
+      <button class="list-row pick" onclick="window.__openSolfeggio()">${s.solfeggioHz} Гц — ${toneByHz(s.solfeggioHz).title} <span class="tag">Выбрать</span></button>
+      <label class="field-label">Громкость частоты</label>
+      <input type="range" min="0" max="1" step="0.01" value="${s.solfeggioVolume}" oninput="window.__setSolfeggioVolume(this.value)" />
+      <h3>Звук дыхания</h3>
+      ${toggleRow('Вдох и выдох', s.breathOn, 'window.__setBreath')}
+      <label class="field-label">Громкость дыхания</label>
+      <input type="range" min="0" max="1" step="0.01" value="${s.breathVolume}" oninput="window.__setBreathVolume(this.value)" />
+      <label class="field-label">Характер дыхания</label>
+      ${BREATH_VARIANTS.map((v) => `<button class="list-row pick ${v.id === s.breathVariant ? 'sel' : ''}" onclick="window.__setBreathVariant('${v.id}')">
+        ${v.title} — ${v.subtitle}${v.id === s.breathVariant ? ' <span class="tag">выбран</span>' : ''}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ---------- музыка / сольфеджио / плейлист ----------
+function screenMusic() {
+  const curId = Progress.session.trackId;
+  const list = MusicLibrary.tracks.map((t) =>
+    `<button class="list-row pick ${t.id === curId ? 'sel' : ''}" onclick="window.__selectTrack('${t.id}')">
+      <span class="dot ${t.id === curId ? 'on' : ''}"></span>
+      <span class="list-col"><span class="list-t">${t.title}</span><span class="muted">${t.subtitle}</span></span>
+      ${t.id === curId ? '<span class="tag">играет</span>' : ''}
+    </button>`).join('');
+  return `${header('Музыка', true)}
+    <p class="sub">Выберите трек для практики</p>
+    <div class="list">${list}</div>`;
+}
+
+function screenSolfeggio() {
+  const cur = Progress.session.solfeggioHz;
+  const list = SOLFEGGIO.map((t) =>
+    `<button class="list-row pick ${t.hz === cur ? 'sel' : ''}" onclick="window.__selectSolfeggio(${t.hz})">
+      <span class="dot" style="background:${t.color}"></span>
+      <span class="list-col">
+        <span class="list-t" style="color:${t.color}">${t.hz} Гц <span class="muted">${t.title}</span></span>
+        <span class="muted">${t.desc}</span>
+      </span>
+      ${t.hz === cur ? '<span class="tag">играет</span>' : ''}
+    </button>`).join('');
+  return `${header('Частоты сольфеджио', true)}
+    <p class="sub">Играют мягким тоном вместе с музыкой. Значения традиционные, не являются медицинской рекомендацией.</p>
+    <div class="list">${list}</div>`;
+}
+
+function screenPlaylist() {
+  const ids = (Progress.session.playlistIds && Progress.session.playlistIds.length)
+    ? Progress.session.playlistIds.slice() : MusicLibrary.ids();
+  const rows = ids.map((id, i) => {
+    const t = MusicLibrary.byId(id);
+    return `<div class="list-row">
+      <span class="tag">${i + 1}.</span>
+      <span class="list-col"><span class="list-t">${t.title}</span><span class="muted">${t.subtitle}</span></span>
+      <button class="mini" onclick="window.__plMove(${i},-1)">↑</button>
+      <button class="mini" onclick="window.__plMove(${i},1)">↓</button>
+      <button class="mini" onclick="window.__plRemove(${i})">✕</button>
+    </div>`;
+  }).join('');
+  const available = MusicLibrary.tracks.filter((t) => !ids.includes(t.id));
+  const add = available.map((t) =>
+    `<button class="list-row pick" onclick="window.__plAdd('${t.id}')">${t.title} — ${t.subtitle} <span class="tag">＋</span></button>`).join('');
+  return `${header('Плейлист', true)}
+    <p class="sub">Порядок воспроизведения в режиме «По списку». Меняйте кнопками ↑ ↓.</p>
+    <h3>В плейлисте</h3>
+    <div class="list">${rows || '<p class="muted">Пока пусто — добавьте треки ниже.</p>'}</div>
+    <h3>Добавить треки</h3>
+    <div class="list">${add || '<p class="muted">Все треки уже в плейлисте.</p>'}</div>
+    <p class="muted">Выбрано: ${ids.length}</p>`;
 }
 
 // ---------- база знаний ----------
@@ -308,14 +501,19 @@ function render() {
   else if (state.screen === 'editor') html = screenEditor();
   else if (state.screen === 'knowledge') html = screenKnowledge();
   else if (state.screen === 'knowledgeDetail') html = screenKnowledgeDetail();
+  else if (state.screen === 'music') html = screenMusic();
+  else if (state.screen === 'solfeggio') html = screenSolfeggio();
+  else if (state.screen === 'playlist') html = screenPlaylist();
   app.innerHTML = html;
 }
 
-// ---------- действия ----------
+// ---------- навигация ----------
 window.__go = (s) => { TG.haptic('select'); go(s); };
 window.__open = (id) => { const p = findPattern(id); if (p) go('detail', { pattern: p, minutes: p.defaultMinutes }); };
 window.__back = () => {
-  if (state.screen === 'knowledgeDetail') go('knowledge');
+  const s = state.screen;
+  if (s === 'knowledgeDetail') go('knowledge');
+  else if (s === 'music' || s === 'solfeggio' || s === 'playlist') go(state.session ? 'session' : 'home');
   else go('home');
 };
 window.__setMins = (v) => { state.minutes = parseInt(v, 10); document.getElementById('minsVal').textContent = v; };
@@ -326,7 +524,6 @@ window.__onboardingDone = async () => {
   go('home');
 };
 
-// база знаний
 window.__openKnowledge = () => go('knowledge');
 window.__openArticle = (id) => go('knowledgeDetail', { article: articleById(id) });
 
@@ -351,19 +548,17 @@ window.__setEditorPhase = (field, v) => {
   state.editor[field] = parseFloat(v);
   const el = document.getElementById('ed-' + field);
   if (el) el.textContent = fmtSec(state.editor[field]);
-  updateCycleLine();
+  const c = document.getElementById('edCycle');
+  if (c) {
+    const e = state.editor;
+    c.textContent = `Цикл: ${fmtSec(e.inhaleSec + e.holdInSec + e.exhaleSec + e.holdOutSec)} с · ${bpmOf(e)} дых/мин`;
+  }
 };
 window.__setEditorMinutes = (v) => {
   state.editor.defaultMinutes = parseInt(v, 10);
   const el = document.getElementById('edMinVal');
   if (el) el.textContent = v;
 };
-function updateCycleLine() {
-  const el = document.getElementById('edCycle');
-  if (!el) return;
-  const e = state.editor;
-  el.textContent = `Цикл: ${fmtSec(e.inhaleSec + e.holdInSec + e.exhaleSec + e.holdOutSec)} с · ${bpmOf(e)} дых/мин`;
-}
 window.__saveCustom = async () => {
   const e = state.editor;
   const cycle = e.inhaleSec + e.holdInSec + e.exhaleSec + e.holdOutSec;
@@ -385,35 +580,134 @@ window.__deleteCustom = async (id) => {
   go('home');
 };
 
-// сессия
+// ---------- сессия ----------
 window.__start = () => {
+  Audio.unlock();
+  applySessionToAudio();
   go('session');
-  const s = new BreathSession(state.pattern, state.minutes, {
+  Audio.startSession();
+  const total = state.minutes * 60;
+  let lastSec = -1;
+  let accentPending = false;
+  const session = new BreathSession(state.pattern, state.minutes, {
+    onPhase: (ph, durSec) => {
+      accentPending = true;
+      Audio.cue(ph.key);
+      Audio.breathPhase(ph.key, durSec);
+      if (Progress.session.vibrateOn) TG.haptic('impact', 'medium');
+    },
     onTick: (t) => {
       const orb = document.getElementById('orb');
-      const ph = document.getElementById('phase');
       if (!orb) return;
       orb.style.transform = `scale(${t.scale})`;
-      ph.textContent = t.paused ? 'Пауза' : t.phase.label;
+      document.getElementById('phase').textContent = t.paused ? 'Пауза' : t.phase.label;
       document.getElementById('phaseLeft').textContent = t.phaseLeft;
-      document.getElementById('remaining').textContent = fmtClock(t.remaining);
+      document.getElementById('elapsed').textContent = fmtClock(t.elapsed);
       document.getElementById('cycles').textContent = t.cycles;
+      document.getElementById('sRemain').textContent = fmtClock(t.remaining);
+      const fill = document.getElementById('overallFill');
+      if (fill) fill.style.width = ((1 - t.remaining / total) * 100).toFixed(1) + '%';
+      const mark = document.getElementById('scoreMark');
+      if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.progress) * 100).toFixed(1) + '%';
       const btn = document.getElementById('pauseBtn');
       if (btn) btn.textContent = t.paused ? 'Продолжить' : 'Пауза';
+      const sec = Math.floor(t.elapsed);
+      if (sec !== lastSec) {
+        lastSec = sec;
+        Audio.metronome(accentPending);
+        accentPending = false;
+      }
     },
     onDone: (summary) => {
+      Audio.stopSession();
       const res = Progress.recordSession(summary);
       Progress.save();
       TG.haptic('notify', 'success');
+      state.session = null;
       showDone(summary, res);
     },
   });
-  state.session = s;
-  s.start();
+  state.session = session;
+  session.start();
 };
 
-window.__pause = () => { if (state.session) state.session.toggle(); };
-window.__stop = () => { if (state.session) state.session.stop(); state.session = null; go('home'); };
+window.__pause = () => {
+  if (!state.session) return;
+  const paused = state.session.toggle();
+  if (paused) Audio.pauseSession(); else Audio.resumeSession();
+  const btn = document.getElementById('pauseBtn');
+  if (btn) btn.textContent = paused ? 'Продолжить' : 'Пауза';
+};
+window.__stop = () => {
+  if (state.session) state.session.stop();
+  state.session = null;
+  Audio.stopSession();
+  go('home');
+};
+
+// музыкальная шторка
+window.__openMusicSheet = () => { state.musicSheet = true; render(); };
+window.__closeMusicSheet = () => { state.musicSheet = false; render(); };
+
+// переключатели сессии
+function persistAndRerender(patch) {
+  Progress.setSession(patch);
+  Progress.save();
+  applySessionToAudio();
+}
+window.__setMusic = (v) => { Audio.setMusic(v); persistAndRerender({ musicOn: v }); render(); };
+window.__setBreath = (v) => { Audio.setBreath(v); persistAndRerender({ breathOn: v }); render(); };
+window.__setVoice = (v) => { Audio.voiceOn = v; persistAndRerender({ voiceOn: v }); render(); };
+window.__setMetronome = (v) => { Audio.metronomeOn = v; persistAndRerender({ metronomeOn: v }); render(); };
+window.__setVibrate = (v) => { persistAndRerender({ vibrateOn: v }); render(); };
+window.__setSolfeggio = (v) => { Audio.setSolfeggio(v); persistAndRerender({ solfeggioOn: v }); render(); };
+window.__setMusicVolume = (v) => { Audio.setMusicVolume(parseFloat(v)); Progress.setSession({ musicVolume: parseFloat(v) }); };
+window.__setSolfeggioVolume = (v) => { Audio.setSolfeggioVolume(parseFloat(v)); Progress.setSession({ solfeggioVolume: parseFloat(v) }); };
+window.__setBreathVolume = (v) => { Audio.setBreathVolume(parseFloat(v)); Progress.setSession({ breathVolume: parseFloat(v) }); };
+window.__restartMusic = () => Audio.restartMusic();
+
+window.__setPlaylistMode = (on) => {
+  if (on && !isPremium()) { go('premium'); return; }
+  Audio.setPlaylistMode(on);
+  persistAndRerender({ playlistMode: on });
+  render();
+};
+window.__openPlaylistGate = () => { if (isPremium()) go('playlist'); else go('premium'); };
+window.__openMusic = () => go('music');
+window.__openSolfeggio = () => go('solfeggio');
+window.__selectTrack = (id) => {
+  Audio.setTrack(id);
+  persistAndRerender({ trackId: id });
+  go(state.session ? 'session' : 'home');
+};
+window.__selectSolfeggio = (hz) => {
+  Audio.setSolfeggioHz(hz);
+  persistAndRerender({ solfeggioHz: hz });
+  go(state.session ? 'session' : 'home');
+};
+window.__setBreathVariant = (id) => {
+  Audio.setBreathVariant(id);
+  persistAndRerender({ breathVariant: id });
+  render();
+};
+
+function currentPlaylist() {
+  const s = Progress.session;
+  return (s.playlistIds && s.playlistIds.length) ? s.playlistIds.slice() : MusicLibrary.ids();
+}
+function savePlaylist(ids) {
+  Audio.setPlaylistIds(ids);
+  persistAndRerender({ playlistIds: ids });
+}
+window.__plMove = (i, dir) => {
+  const ids = currentPlaylist();
+  const j = i + dir;
+  if (j < 0 || j >= ids.length) return;
+  const t = ids[i]; ids[i] = ids[j]; ids[j] = t;
+  savePlaylist(ids); render();
+};
+window.__plRemove = (i) => { const ids = currentPlaylist(); ids.splice(i, 1); savePlaylist(ids); render(); };
+window.__plAdd = (id) => { const ids = currentPlaylist(); if (!ids.includes(id)) ids.push(id); savePlaylist(ids); render(); };
 
 function showDone(summary, res) {
   const ach = res.unlocked.map((id) => {
@@ -460,13 +754,14 @@ function withTimeout(p, ms) {
     ]);
     TG.ready();
     await Progress.load();
+    applySessionToAudio();
     await STARS.syncPremium();
     TON.init(new URL('tonconnect-manifest.json', location.href).href);
 
-    // диплинки/быстрый переход: ?s=...&p=...
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
-    if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge') {
+    if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
+        || s === 'music' || s === 'solfeggio' || s === 'playlist') {
       render();
       go(s);
     } else if (s === 'session') {

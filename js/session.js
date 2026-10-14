@@ -92,16 +92,18 @@ export class BreathSession {
     if (cur.phase !== this._lastPhase) {
       this._lastPhase = cur.phase;
       TG.haptic('impact', cur.phase === 'INHALE' ? 'medium' : 'light');
-      if (this.handlers.onPhase) this.handlers.onPhase(PHASES[cur.phase]);
+      if (this.handlers.onPhase) this.handlers.onPhase(PHASES[cur.phase], cur.dur);
     }
 
     const cycles = Math.floor(this.elapsed / this.cycleSec);
     if (this.handlers.onTick) {
       this.handlers.onTick({
         phase: PHASES[cur.phase],
+        phaseKey: cur.phase,
         phaseLeft: Math.max(0, Math.ceil(cur.dur - local)),
         scale,
         remaining: Math.max(0, this.totalSec - this.elapsed),
+        elapsed: this.elapsed,
         cycles,
         paused: this.paused,
         progress: this.elapsed / this.totalSec,
