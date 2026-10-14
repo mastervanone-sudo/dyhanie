@@ -8,6 +8,9 @@ import { STARS, PLANS } from './stars.js';
 const app = document.getElementById('app');
 const state = { screen: 'home', pattern: null, minutes: 5, session: null };
 
+// Тестовый переключатель Premium (без оплаты). ВЫКЛЮЧИ перед релизом: false.
+const PREMIUM_TEST = true;
+
 const go = (screen, opts = {}) => {
   state.screen = screen;
   Object.assign(state, opts);
@@ -155,6 +158,7 @@ function screenPremium() {
     ${Progress.data.premium ? '<div class="wallet-card"><div>Premium активен ✓</div></div>' : ''}
     <div class="plans">${plans}</div>
     <p class="muted">Оплата — Telegram Stars (XTR). Цифровые товары в Telegram продаются через Stars; создание счёта делает бэкенд с ботом.</p>
+    ${PREMIUM_TEST ? `<button class="ghost" onclick="window.__togglePremiumTest()">${Progress.data.premium ? '🧪 Тест: отключить Premium' : '🧪 Тест: включить Premium'}</button>` : ''}
     ${navBar()}`;
 }
 
@@ -228,6 +232,11 @@ window.__share = () => {
 window.__tonConnect = () => TON.open();
 window.__tonDisconnect = async () => { await TON.disconnect(); render(); };
 window.__buy = (id) => STARS.buy(id);
+window.__togglePremiumTest = async () => {
+  Progress.setPremium(!Progress.data.premium);
+  await Progress.save();
+  render();
+};
 
 window.__onWalletChange = () => { if (state.screen === 'wallet') render(); };
 window.__onPremiumChange = () => { if (state.screen === 'premium') render(); };
