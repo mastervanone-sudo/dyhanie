@@ -306,11 +306,16 @@ function screenSession() {
       <span class="s-remain" id="sRemain">${fmtClock(state.minutes * 60)}</span>
     </div>
     <div class="orb-wrap">
-      <div class="orb-ring"></div>
+      <svg class="orb-svg" viewBox="0 0 300 300" aria-hidden="true">
+        <circle class="ring-track" cx="150" cy="150" r="142"></circle>
+        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="142" stroke-dasharray="892.2" stroke-dashoffset="892.2"></circle>
+        <circle class="ring-phase" id="ringPhase" cx="150" cy="150" r="122" stroke-dasharray="766.5" stroke-dashoffset="766.5"></circle>
+      </svg>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
     </div>
     <div class="overall"><div class="overall-fill" id="overallFill" style="width:0%"></div></div>
+    <div class="overall-label"><span class="muted" id="overallText">0:00 / ${fmtClock(state.minutes * 60)}</span></div>
     <div class="s-meta">
       <div><b id="elapsed">0:00</b><span>время</span></div>
       <div><b id="cycles">0</b><span>циклов</span></div>
@@ -1287,8 +1292,16 @@ window.__start = () => {
       document.getElementById('elapsed').textContent = fmtClock(t.elapsed);
       document.getElementById('cycles').textContent = t.cycles;
       document.getElementById('sRemain').textContent = fmtClock(t.remaining);
+      const overall = 1 - t.remaining / total;
       const fill = document.getElementById('overallFill');
-      if (fill) fill.style.width = ((1 - t.remaining / total) * 100).toFixed(1) + '%';
+      if (fill) fill.style.width = (overall * 100).toFixed(1) + '%';
+      const C1 = 892.2, C2 = 766.5;
+      const ro = document.getElementById('ringOverall');
+      if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
+      const rp = document.getElementById('ringPhase');
+      if (rp) rp.setAttribute('stroke-dashoffset', (C2 * (1 - (t.phaseProgress || 0))).toFixed(2));
+      const ot = document.getElementById('overallText');
+      if (ot) ot.textContent = fmtClock(t.elapsed) + ' / ' + fmtClock(total);
       const mark = document.getElementById('scoreMark');
       if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.progress) * 100).toFixed(1) + '%';
       const btn = document.getElementById('pauseBtn');
