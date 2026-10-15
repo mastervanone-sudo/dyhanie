@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v23';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v23';
-import { ARTICLES, articleById } from './knowledge.js?v23';
-import { MusicLibrary } from './music.js?v23';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v23';
-import { BINAURAL, binauralByHz } from './binaural.js?v23';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v23';
-import { MatrixBase } from './matrix.js?v23';
-import { Audio, BREATH_VARIANTS } from './audio.js?v23';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v23';
-import { TG, loadScript } from './telegram.js?v23';
-import { BreathSession, fmtClock } from './session.js?v23';
-import { TON } from './ton.js?v23';
-import { STARS, PLANS } from './stars.js?v23';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v24';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v24';
+import { ARTICLES, articleById } from './knowledge.js?v24';
+import { MusicLibrary } from './music.js?v24';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v24';
+import { BINAURAL, binauralByHz } from './binaural.js?v24';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v24';
+import { MatrixBase } from './matrix.js?v24';
+import { Audio, BREATH_VARIANTS } from './audio.js?v24';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v24';
+import { TG, loadScript } from './telegram.js?v24';
+import { BreathSession, fmtClock } from './session.js?v24';
+import { TON } from './ton.js?v24';
+import { STARS, PLANS } from './stars.js?v24';
 
 const app = document.getElementById('app');
 const state = {
@@ -645,34 +645,11 @@ function screenProfile() {
   const ring = Progress.xpIntoLevel;
   const fav = favoritePattern() || '—';
   const premium = Progress.data.premium;
-  const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
-  const days = buildDayMap();
   const ach = ACHIEVEMENTS.map((a) => {
     const on = d.achievements.includes(a.id);
     return `<div class="ach ${on ? 'on' : ''}"><div class="ach-ico">${a.icon}</div>
       <div class="ach-t">${a.title}</div><div class="ach-d">${a.desc}</div></div>`;
   }).join('');
-
-  const journalRows = Progress.journal.length
-    ? Progress.journal.map((e) => {
-        const ratings = [];
-        if (e.calm) ratings.push(`Спокойствие ${e.calm}`);
-        if (e.energy) ratings.push(`Энергия ${e.energy}`);
-        if (e.focus) ratings.push(`Фокус ${e.focus}`);
-        const tags = (e.tags || []).join(' · ');
-        return `<div class="j-row">
-          <div class="j-top">
-            <div><div class="muted">${ruDate(e.dayEpochDay)}</div>
-            ${e.patternName ? `<div>${e.patternName}</div>` : ''}</div>
-            <button class="star ${e.favorite ? 'on' : ''}" onclick="window.__jFav('${e.id}')">★</button>
-          </div>
-          ${ratings.length ? `<div class="j-meta">${ratings.join(' · ')}</div>` : ''}
-          ${tags ? `<div class="muted">${tags}</div>` : ''}
-          ${e.text ? `<div class="j-text">${e.text}</div>` : ''}
-          <button class="mini" onclick="window.__openJournal('${e.id}')">Открыть</button>
-        </div>`;
-      }).join('')
-    : '<p class="muted">Записывайте, как вы себя чувствуете и какие приходят мысли после практики.</p>';
 
   return `${header('Профиль', true)}
     <div class="prof-head">
@@ -708,12 +685,6 @@ function screenProfile() {
     </button>
     <h3>Достижения</h3>
     <div class="ach-grid">${ach}</div>
-    <h3>Дневник состояний</h3>
-    <button class="ghost" onclick="window.__addJournal()">＋ Запись о состоянии</button>
-    <div class="j-list">${journalRows}</div>
-    <h3>Календарь активности</h3>
-    ${activityCalendarHtml(month, days)}
-    ${state.selectedDay ? dayDetailsHtml(state.selectedDay, days) : ''}
     <button class="ghost" onclick="window.__go('stats')">Вся история практик</button>
     ${navBar()}`;
 }
@@ -1096,6 +1067,28 @@ function stopAudioPoll() { if (audioPoll) { clearInterval(audioPoll); audioPoll 
 // ---------- прогресс ----------
 function screenProgress() {
   const d = Progress.data;
+  const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  const days = buildDayMap();
+  const journalRows = Progress.journal.length
+    ? Progress.journal.map((e) => {
+        const ratings = [];
+        if (e.calm) ratings.push(`Спокойствие ${e.calm}`);
+        if (e.energy) ratings.push(`Энергия ${e.energy}`);
+        if (e.focus) ratings.push(`Фокус ${e.focus}`);
+        const tags = (e.tags || []).join(' · ');
+        return `<div class="j-row">
+          <div class="j-top">
+            <div><div class="muted">${ruDate(e.dayEpochDay)}</div>
+            ${e.patternName ? `<div>${e.patternName}</div>` : ''}</div>
+            <button class="star ${e.favorite ? 'on' : ''}" onclick="window.__jFav('${e.id}')">★</button>
+          </div>
+          ${ratings.length ? `<div class="j-meta">${ratings.join(' · ')}</div>` : ''}
+          ${tags ? `<div class="muted">${tags}</div>` : ''}
+          ${e.text ? `<div class="j-text">${e.text}</div>` : ''}
+          <button class="mini" onclick="window.__openJournal('${e.id}')">Открыть</button>
+        </div>`;
+      }).join('')
+    : '<p class="muted">Записывайте, как вы себя чувствуете и какие приходят мысли после практики.</p>';
   return `${header('Прогресс')}
     <div class="level-card">
       <div class="level-num">Уровень ${Progress.level}</div>
@@ -1110,6 +1103,12 @@ function screenProgress() {
       <div class="stat"><b>${Math.round(d.totalMinutes)}</b><span>минут</span></div>
     </div>
     <button class="ghost" onclick="window.__share()">Поделиться результатом</button>
+    <h3>Дневник состояний</h3>
+    <button class="ghost" onclick="window.__addJournal()">＋ Запись о состоянии</button>
+    <div class="j-list">${journalRows}</div>
+    <h3>Календарь активности</h3>
+    ${activityCalendarHtml(month, days)}
+    ${state.selectedDay ? dayDetailsHtml(state.selectedDay, days) : ''}
     ${navBar()}`;
 }
 
