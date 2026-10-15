@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v21';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v21';
-import { ARTICLES, articleById } from './knowledge.js?v21';
-import { MusicLibrary } from './music.js?v21';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v21';
-import { BINAURAL, binauralByHz } from './binaural.js?v21';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v21';
-import { MatrixBase } from './matrix.js?v21';
-import { Audio, BREATH_VARIANTS } from './audio.js?v21';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v21';
-import { TG, loadScript } from './telegram.js?v21';
-import { BreathSession, fmtClock } from './session.js?v21';
-import { TON } from './ton.js?v21';
-import { STARS, PLANS } from './stars.js?v21';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v22';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v22';
+import { ARTICLES, articleById } from './knowledge.js?v22';
+import { MusicLibrary } from './music.js?v22';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v22';
+import { BINAURAL, binauralByHz } from './binaural.js?v22';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v22';
+import { MatrixBase } from './matrix.js?v22';
+import { Audio, BREATH_VARIANTS } from './audio.js?v22';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v22';
+import { TG, loadScript } from './telegram.js?v22';
+import { BreathSession, fmtClock } from './session.js?v22';
+import { TON } from './ton.js?v22';
+import { STARS, PLANS } from './stars.js?v22';
 
 const app = document.getElementById('app');
 const state = {
@@ -258,12 +258,13 @@ function phaseSlider(label, field, value) {
 
 // ---------- сессия ----------
 // Цвета фаз. Вдох и первая задержка — местами (по схеме).
+// Задержка после выдоха — тёплый янтарный, чтобы не терялась на тёмном фоне.
 const PHASE_COLORS = {
-  INHALE: '#A78BFA', HOLD_IN: '#6EE7D0', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
+  INHALE: '#A78BFA', HOLD_IN: '#6EE7D0', EXHALE: '#7CA6F8', HOLD_OUT: '#E0A94F',
 };
 // Отдельные «свечные» цвета фаз — светлее, чтобы свечение не пропадало на задержке/выдохе.
 const PHASE_GLOW = {
-  INHALE: '#8B8CF8', HOLD_IN: '#40D1BE', EXHALE: '#5E82F7', HOLD_OUT: '#2DD4A8',
+  INHALE: '#8B8CF8', HOLD_IN: '#40D1BE', EXHALE: '#5E82F7', HOLD_OUT: '#F2C879',
 };
 
 function currentPhaseColor() { return state.phaseGlow || PHASE_GLOW.INHALE; }
