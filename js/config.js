@@ -8,3 +8,6 @@ export const API_BASE = 'https://dyhanie-backend.onrender.com';
 
 // Юзернейм бота (для партнёрских ссылок t.me/<bot>?start=ref_<код>).
 export const BOT_USERNAME = 'breathing_training_bot';
+
+// Версия продукта (показывается в профиле).
+export const APP_VERSION = '1.0';

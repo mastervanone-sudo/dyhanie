@@ -1,18 +1,19 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v29';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v29';
-import { ARTICLES, articleById } from './knowledge.js?v29';
-import { MusicLibrary } from './music.js?v29';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v29';
-import { BINAURAL, binauralByHz } from './binaural.js?v29';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v29';
-import { MatrixBase } from './matrix.js?v29';
-import { Audio, BREATH_VARIANTS } from './audio.js?v29';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v29';
-import { TG, loadScript } from './telegram.js?v29';
-import { BreathSession, fmtClock } from './session.js?v29';
-import { TON } from './ton.js?v29';
-import { STARS, PLANS } from './stars.js?v29';
-import { Referral } from './referral.js?v29';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v30';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v30';
+import { ARTICLES, articleById } from './knowledge.js?v30';
+import { MusicLibrary } from './music.js?v30';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v30';
+import { BINAURAL, binauralByHz } from './binaural.js?v30';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v30';
+import { MatrixBase } from './matrix.js?v30';
+import { Audio, BREATH_VARIANTS } from './audio.js?v30';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v30';
+import { TG, loadScript } from './telegram.js?v30';
+import { BreathSession, fmtClock } from './session.js?v30';
+import { TON } from './ton.js?v30';
+import { STARS, PLANS } from './stars.js?v30';
+import { Referral } from './referral.js?v30';
+import { APP_VERSION } from './config.js?v30';
 
 const app = document.getElementById('app');
 const state = {
@@ -692,6 +693,7 @@ function screenProfile() {
     <h3>Достижения</h3>
     <div class="ach-grid">${ach}</div>
     <button class="ghost" onclick="window.__go('stats')">Вся история практик</button>
+    <p class="muted" style="text-align:center;margin:16px 0 4px">«Дыхание» · версия ${APP_VERSION}</p>
     ${navBar()}`;
 }
 
