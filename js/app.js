@@ -267,6 +267,30 @@ const PHASE_GLOW = {
 
 function currentPhaseColor() { return state.phaseGlow || PHASE_GLOW.INHALE; }
 
+// Цветное «колесо» цикла: цвета фаз как в партитуре, плавно переходящие друг в друга.
+function cycleGradientCss(pattern) {
+  const phases = [
+    { c: PHASE_COLORS.INHALE, d: pattern.inhaleSec },
+    { c: PHASE_COLORS.HOLD_IN, d: pattern.holdInSec },
+    { c: PHASE_COLORS.EXHALE, d: pattern.exhaleSec },
+    { c: PHASE_COLORS.HOLD_OUT, d: pattern.holdOutSec },
+  ].filter((p) => p.d > 0);
+  if (!phases.length) return 'transparent';
+  const total = phases.reduce((s, p) => s + p.d, 0);
+  const cum = [0];
+  phases.forEach((p) => cum.push(cum[cum.length - 1] + p.d / total));
+  const n = phases.length;
+  const w = 0.06; // ширина плавного перехода между фазами
+  const stops = [[phases[0].c, 0]];
+  for (let i = 1; i < n; i++) {
+    stops.push([phases[i - 1].c, Math.max(0, cum[i] - w)]);
+    stops.push([phases[i].c, Math.min(1, cum[i] + w)]);
+  }
+  stops.push([phases[n - 1].c, Math.max(0, 1 - w)]);
+  stops.push([phases[0].c, 1]); // замыкание в начало (переход в вдох)
+  return 'conic-gradient(from -90deg, ' + stops.map(([c, f]) => c + ' ' + (f * 100).toFixed(2) + '%').join(', ') + ')';
+}
+
 // Привязка визуализатора к текущему DOM экрана практики (вызывается после каждого рендера).
 function bindVisuals() {
   const cv = document.getElementById('cosmos');
@@ -320,8 +344,11 @@ function screenSession() {
       <svg class="orb-svg" viewBox="0 0 300 300" aria-hidden="true">
         <circle class="ring-track" cx="150" cy="150" r="146"></circle>
         <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="146" stroke-dasharray="917.3" stroke-dashoffset="917.3"></circle>
-        <circle class="ring-phase" id="ringPhase" cx="150" cy="150" r="127" stroke-dasharray="797.9" stroke-dashoffset="797.9"></circle>
       </svg>
+      <div class="cycle-ring">
+        <div class="cycle-wheel" id="cycleWheel" style="background:${cycleGradientCss(state.pattern)}"></div>
+        <div class="cycle-rot" id="cycleRot"><div class="cycle-dot"></div></div>
+      </div>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
     </div>
@@ -1342,15 +1369,11 @@ window.__start = () => {
       const overall = 1 - t.remaining / total;
       const fill = document.getElementById('overallFill');
       if (fill) fill.style.width = (overall * 100).toFixed(1) + '%';
-      const C1 = 917.3, C2 = 797.9;
+      const C1 = 917.3;
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
-      const rp = document.getElementById('ringPhase');
-      if (rp) {
-        // внутреннее кольцо = полный цикл дыхания: замыкается и начинается заново
-        rp.setAttribute('stroke-dashoffset', (C2 * (1 - (t.cycleProgress || 0))).toFixed(2));
-        rp.style.stroke = PHASE_GLOW[t.phaseKey] || PHASE_GLOW.INHALE;
-      }
+      const rot = document.getElementById('cycleRot');
+      if (rot) rot.style.transform = 'rotate(' + ((t.cycleProgress || 0) * 360).toFixed(2) + 'deg)';
       const ol = document.getElementById('overallLeft');
       if (ol) ol.textContent = fmtClock(t.elapsed);
       const mark = document.getElementById('scoreMark');
