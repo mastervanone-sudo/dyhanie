@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v27';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v27';
-import { ARTICLES, articleById } from './knowledge.js?v27';
-import { MusicLibrary } from './music.js?v27';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v27';
-import { BINAURAL, binauralByHz } from './binaural.js?v27';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v27';
-import { MatrixBase } from './matrix.js?v27';
-import { Audio, BREATH_VARIANTS } from './audio.js?v27';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v27';
-import { TG, loadScript } from './telegram.js?v27';
-import { BreathSession, fmtClock } from './session.js?v27';
-import { TON } from './ton.js?v27';
-import { STARS, PLANS } from './stars.js?v27';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v28';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v28';
+import { ARTICLES, articleById } from './knowledge.js?v28';
+import { MusicLibrary } from './music.js?v28';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v28';
+import { BINAURAL, binauralByHz } from './binaural.js?v28';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v28';
+import { MatrixBase } from './matrix.js?v28';
+import { Audio, BREATH_VARIANTS } from './audio.js?v28';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v28';
+import { TG, loadScript } from './telegram.js?v28';
+import { BreathSession, fmtClock } from './session.js?v28';
+import { TON } from './ton.js?v28';
+import { STARS, PLANS } from './stars.js?v28';
 
 const app = document.getElementById('app');
 const state = {
@@ -450,6 +450,12 @@ function musicSheetHtml(pattern) {
       ${scoreBarHtml(pattern)}
       ${phaseLegendHtml(pattern)}
       ${toggleRow('Музыка', s.musicOn, 'window.__setMusic')}
+      ${toggleRow('Дыхание', s.breathOn, 'window.__setBreath')}
+      ${toggleRow('Голос', s.voiceOn, 'window.__setVoice')}
+      ${toggleRow('Метроном', s.metronomeOn, 'window.__setMetronome')}
+      ${toggleRow('Вибрация', s.vibrateOn, 'window.__setVibrate')}
+      ${toggleRow('Частота сольфеджио', s.solfeggioOn, 'window.__setSolfeggio')}
+      ${toggleRow('Бинауральные ритмы', s.binauralOn, 'window.__setBinaural')}
       <label class="field-label">Громкость музыки</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.musicVolume}" oninput="window.__setMusicVolume(this.value)" />
       <button class="ghost" onclick="window.__restartMusic()">Трек в начало</button>
@@ -467,7 +473,6 @@ function musicSheetHtml(pattern) {
       <label class="field-label">Громкость частоты</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.solfeggioVolume}" oninput="window.__setSolfeggioVolume(this.value)" />
       <h3>Бинауральные ритмы</h3>
-      ${toggleRow('Бинауральные ритмы', s.binauralOn, 'window.__setBinaural')}
       <button class="list-row pick" onclick="window.__openBinaural()">${binauralByHz(s.binauralHz).hz} Гц — ${binauralByHz(s.binauralHz).title} · ${binauralByHz(s.binauralHz).label} <span class="tag">Выбрать</span></button>
       <label class="field-label">Громкость ритма</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.binauralVolume}" oninput="window.__setBinauralVolume(this.value)" />
@@ -476,7 +481,6 @@ function musicSheetHtml(pattern) {
       <div class="chips">${VISUAL_LEVELS.map((l) => `<button class="chip ${s.visual === l ? 'on' : ''}" onclick="window.__setVisual('${l}')">${VISUAL_LABELS[l]}</button>`).join('')}</div>
       <p class="muted">Космос и реакция на музыку: «Средне» — заметно, «Слабо» — сдержанно, «Выкл» — без эффектов.</p>
       <h3>Звук дыхания</h3>
-      ${toggleRow('Вдох и выдох', s.breathOn, 'window.__setBreath')}
       <label class="field-label">Громкость дыхания</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.breathVolume}" oninput="window.__setBreathVolume(this.value)" />
       <label class="field-label">Характер дыхания</label>
