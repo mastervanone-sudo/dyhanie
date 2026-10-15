@@ -278,22 +278,6 @@ function bindVisuals() {
   if (!OrbVisuals.running) OrbVisuals.start();
 }
 
-function cycleFraction(pattern, phaseKey, progress) {
-  const phases = [
-    ['INHALE', pattern.inhaleSec],
-    ['HOLD_IN', pattern.holdInSec],
-    ['EXHALE', pattern.exhaleSec],
-    ['HOLD_OUT', pattern.holdOutSec],
-  ].filter((x) => x[1] > 0);
-  const total = phases.reduce((s, x) => s + x[1], 0) || 1;
-  let acc = 0;
-  for (const [k, d] of phases) {
-    if (k === phaseKey) return (acc + d * Math.min(1, Math.max(0, progress))) / total;
-    acc += d;
-  }
-  return 0;
-}
-
 function scoreBarHtml(pattern) {
   const phases = [
     ['INHALE', pattern.inhaleSec],
@@ -302,9 +286,10 @@ function scoreBarHtml(pattern) {
     ['HOLD_OUT', pattern.holdOutSec],
   ].filter((x) => x[1] > 0);
   const total = phases.reduce((s, x) => s + x[1], 0) || 1;
-  const segs = phases.map(([k, d]) =>
-    `<div class="score-seg" style="width:${(d / total) * 100}%;background:${PHASE_COLORS[k]}"></div>`).join('');
-  return `<div class="score-bar" id="scoreBar">${segs}<div class="score-mark" id="scoreMark"></div></div>`;
+  // Один цикл = 100% ширины контейнера; лента из трёх копий даёт бесшовный цикл.
+  const one = phases.map(([k, d]) =>
+    `<div class="score-seg" style="width:${((d / total) * 100 / 3).toFixed(4)}%;background:${PHASE_COLORS[k]}"></div>`).join('');
+  return `<div class="score-loop" id="scoreLoop"><div class="score-strip" id="scoreStrip">${one}${one}${one}</div><div class="score-playhead"></div></div>`;
 }
 
 function phaseLegendHtml(pattern) {
@@ -1341,8 +1326,12 @@ window.__start = () => {
       }
       const ol = document.getElementById('overallLeft');
       if (ol) ol.textContent = fmtClock(t.elapsed);
-      const mark = document.getElementById('scoreMark');
-      if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.phaseProgress) * 100).toFixed(1) + '%';
+      const strip = document.getElementById('scoreStrip');
+      if (strip) {
+        const ph = 0.28; // где стоит курсор (доля ширины)
+        const p = t.cycleProgress || 0;
+        strip.style.transform = 'translateX(' + (-((1 + p - ph) / 3) * 100).toFixed(3) + '%)';
+      }
       const btn = document.getElementById('pauseBtn');
       if (btn) btn.textContent = t.paused ? 'Продолжить' : 'Пауза';
       const sec = Math.floor(t.elapsed);
