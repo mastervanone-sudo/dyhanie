@@ -1257,9 +1257,9 @@ window.__pickAudio = (input) => {
   go('audio');
   startAudioPoll();
 };
-window.__audioToggle = () => { if (!extEl) return; if (extEl.paused) extEl.play(); else extEl.pause(); };
+window.__audioToggle = () => { if (!extEl) return; if (extEl.paused) extEl.play().catch(() => {}); else extEl.pause(); };
 window.__audioSeek = (v) => { if (!extEl) return; const d = extEl.duration || 0; if (d > 0) extEl.currentTime = (parseInt(v, 10) / 1000) * d; };
-window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play(); } };
+window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play().catch(() => {}); } };
 
 // ---------- сессия ----------
 window.__start = () => {
@@ -1513,6 +1513,30 @@ window.__togglePremiumTest = async () => {
 
 window.__onWalletChange = () => { if (state.screen === 'wallet') render(); };
 window.__onPremiumChange = () => { if (state.screen === 'premium') render(); };
+
+// ---------- сворачивание приложения ----------
+// При уходе в фон ставим практику на паузу (аудио и таймер), чтобы при возврате
+// не было «прыжка» времени и недописанных сессий.
+document.addEventListener('visibilitychange', () => {
+  try {
+  if (!document.hidden) return;
+  if (state.session && !state.session.paused) {
+    state.session.pause();
+    Audio.pauseSession();
+    const b = document.getElementById('pauseBtn');
+    if (b) b.textContent = 'Продолжить';
+  }
+  if (state.energyProgram && state.epRunning && state.screen === 'energyPlayer') {
+    state.epRunning = false;
+    if (bgEl) bgEl.pause();
+    const b = document.getElementById('epPause');
+    if (b) b.textContent = 'Продолжить';
+  }
+  if (state.screen === 'audio' && extEl && !extEl.paused) {
+    extEl.pause();
+  }
+  } catch (e) { console.error('visibility handler', e); }
+});
 
 // ---------- запуск ----------
 function withTimeout(p, ms) {

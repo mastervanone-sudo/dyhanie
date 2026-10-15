@@ -76,7 +76,9 @@ class AudioEngine {
       if (!AC) return null;
       this.ctx = new AC();
     }
-    if (this.ctx.state === 'suspended') { try { this.ctx.resume(); } catch (e) {} }
+    if (this.ctx.state === 'suspended') {
+      try { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    }
     return this.ctx;
   }
 
@@ -228,6 +230,14 @@ class AudioEngine {
   }
 
   async _playBreath(kind, durSec) {
+    try {
+      await this._playBreathInner(kind, durSec);
+    } catch (e) {
+      this._stopBreath();
+    }
+  }
+
+  async _playBreathInner(kind, durSec) {
     const ctx = this.ensureCtx();
     if (!ctx) return;
     const v = breathVariantById(this.breathVariant);
@@ -273,15 +283,18 @@ class AudioEngine {
 
   // ---------- голос и метроном ----------
   async _playCue(url, vol) {
-    const ctx = this.ensureCtx();
-    const buf = await this._loadBuffer(url);
-    if (!buf) return;
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    const g = ctx.createGain();
-    g.gain.value = vol;
-    src.connect(g); g.connect(ctx.destination);
-    src.start();
+    try {
+      const ctx = this.ensureCtx();
+      if (!ctx) return;
+      const buf = await this._loadBuffer(url);
+      if (!buf) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.value = vol;
+      src.connect(g); g.connect(ctx.destination);
+      src.start();
+    } catch (e) {}
   }
 
   cue(phaseKey) {

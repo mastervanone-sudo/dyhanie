@@ -1,4 +1,7 @@
 // Движок дыхательной сессии: фазы, таймер, прогресс.
+// Время считается по часам (performance.now), а не по кадрам — так сессия
+// не «замирает», если requestAnimationFrame троттлится. Кадры только для анимации,
+// плюс сторожевой интервал для надёжности.
 import { TG } from './telegram.js';
 
 export const PHASES = {
@@ -22,29 +25,54 @@ export class BreathSession {
     this.pattern = pattern;
     this.totalSec = minutes * 60;
     this.seq = buildSequence(pattern);
-    this.cycleSec = this.seq.reduce((s, x) => s + x.dur, 0);
+    this.cycleSec = this.seq.reduce((s, x) => s + x.dur, 0) || 1;
     this.handlers = handlers; // { onTick, onPhase, onDone }
-    this.elapsed = 0;
     this.paused = false;
     this.running = false;
+    this._startTs = 0;
+    this._pausedAt = 0;
+    this._pausedTotal = 0;
     this._lastPhase = null;
-    this._lastTs = 0;
     this._raf = null;
+    this._timer = null;
   }
 
   start() {
     this.running = true;
-    this._lastTs = performance.now();
-    this._loop(this._lastTs);
+    this._startTs = performance.now();
+    this._pausedAt = 0;
+    this._pausedTotal = 0;
+    this._tick();
+    const frame = () => {
+      if (!this.running) return;
+      this._tick();
+      this._raf = requestAnimationFrame(frame);
+    };
+    this._raf = requestAnimationFrame(frame);
+    // Сторожевой интервал: гарантирует ход времени, даже если кадров нет.
+    this._timer = setInterval(() => { if (this.running) this._tick(); }, 200);
   }
 
+  elapsedSec() {
+    if (!this.running) return this._frozen != null ? this._frozen : 0;
+    const now = performance.now();
+    let e = (now - this._startTs - this._pausedTotal) / 1000;
+    if (this.paused && this._pausedAt) e -= (now - this._pausedAt) / 1000;
+    return Math.max(0, e);
+  }
+
+  get elapsed() { return this.elapsedSec(); }
+
   pause() {
+    if (this.paused) return;
     this.paused = true;
+    this._pausedAt = performance.now();
   }
   resume() {
-    if (!this.running) return;
+    if (!this.running || !this.paused) return;
     this.paused = false;
-    this._lastTs = performance.now();
+    this._pausedTotal += performance.now() - this._pausedAt;
+    this._pausedAt = 0;
   }
   toggle() {
     this.paused ? this.resume() : this.pause();
@@ -52,30 +80,29 @@ export class BreathSession {
   }
 
   stop() {
+    if (!this.running) return;
+    this._frozen = this.elapsedSec();
     this.running = false;
     if (this._raf) cancelAnimationFrame(this._raf);
+    if (this._timer) clearInterval(this._timer);
+    this._raf = null;
+    this._timer = null;
   }
 
-  _loop(ts) {
+  _tick() {
     if (!this.running) return;
-    const dt = (ts - this._lastTs) / 1000;
-    this._lastTs = ts;
-    if (!this.paused) {
-      this.elapsed += dt;
-      if (this.elapsed >= this.totalSec) {
-        this.elapsed = this.totalSec;
-        this._emit(true);
-        this.stop();
-        if (this.handlers.onDone) this.handlers.onDone(this.summary());
-        return;
-      }
-      this._emit(false);
+    const sec = this.elapsedSec();
+    if (sec >= this.totalSec) {
+      this._emit(this.totalSec, true);
+      this.stop();
+      if (this.handlers.onDone) this.handlers.onDone(this.summary());
+      return;
     }
-    this._raf = requestAnimationFrame((t) => this._loop(t));
+    this._emit(sec, false);
   }
 
-  _emit(done) {
-    const inCycle = this.elapsed % this.cycleSec;
+  _emit(elapsedSec, done) {
+    const inCycle = elapsedSec % this.cycleSec;
     let acc = 0, cur = this.seq[0], local = 0;
     for (const s of this.seq) {
       if (inCycle < acc + s.dur) { cur = s; local = inCycle - acc; break; }
@@ -95,18 +122,18 @@ export class BreathSession {
       if (this.handlers.onPhase) this.handlers.onPhase(PHASES[cur.phase], cur.dur);
     }
 
-    const cycles = Math.floor(this.elapsed / this.cycleSec);
+    const cycles = Math.floor(elapsedSec / this.cycleSec);
     if (this.handlers.onTick) {
       this.handlers.onTick({
         phase: PHASES[cur.phase],
         phaseKey: cur.phase,
         phaseLeft: Math.max(0, Math.ceil(cur.dur - local)),
         scale,
-        remaining: Math.max(0, this.totalSec - this.elapsed),
-        elapsed: this.elapsed,
+        remaining: Math.max(0, this.totalSec - elapsedSec),
+        elapsed: elapsedSec,
         cycles,
         paused: this.paused,
-        progress: this.elapsed / this.totalSec,
+        progress: this.totalSec > 0 ? elapsedSec / this.totalSec : 1,
         done,
       });
     }
@@ -117,7 +144,7 @@ export class BreathSession {
       patternId: this.pattern.id,
       patternName: this.pattern.name,
       minutes: Math.max(1, Math.round(this.totalSec / 60)),
-      cycles: Math.floor(this.elapsed / this.cycleSec),
+      cycles: Math.floor(this.totalSec / this.cycleSec),
     };
   }
 }
