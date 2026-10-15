@@ -285,9 +285,9 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 .ring-overall { stroke: var(--accent2); stroke-width: 4; opacity: .8; transition: stroke-dashoffset .2s linear; }
 /* цветное колесо цикла (цвета фаз как в партитуре) + бегущая точка */
 .cycle-ring { position: absolute; left: 50%; top: 50%; width: 264px; height: 264px; margin: -132px 0 0 -132px; pointer-events: none; }
-.cycle-wheel { position: absolute; inset: 0; border-radius: 50%; opacity: .95;
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px)); }
+.cycle-wheel { position: absolute; inset: 0; border-radius: 50%; background: rgba(255,255,255,.12);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px)); }
 .cycle-rot { position: absolute; inset: 0; will-change: transform; }
 .cycle-dot { position: absolute; left: 50%; top: 5px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,.85); }
 html.light .cycle-dot { background: #123; box-shadow: 0 0 8px rgba(18,51,51,.5); }

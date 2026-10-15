@@ -267,28 +267,44 @@ const PHASE_GLOW = {
 
 function currentPhaseColor() { return state.phaseGlow || PHASE_GLOW.INHALE; }
 
-// Цветное «колесо» цикла: цвета фаз как в партитуре, плавно переходящие друг в друга.
-function cycleGradientCss(pattern) {
+// Плавный цвет по фазе: в пределах перехода между фазами цвета смешиваются.
+function hexRgb(hex) {
+  const h = (hex || '#ffffff').replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbHex(a) {
+  return '#' + a.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+}
+function phaseColorAt(pattern, p) {
   const phases = [
-    { c: PHASE_COLORS.INHALE, d: pattern.inhaleSec },
-    { c: PHASE_COLORS.HOLD_IN, d: pattern.holdInSec },
-    { c: PHASE_COLORS.EXHALE, d: pattern.exhaleSec },
-    { c: PHASE_COLORS.HOLD_OUT, d: pattern.holdOutSec },
-  ].filter((p) => p.d > 0);
-  if (!phases.length) return 'transparent';
-  const total = phases.reduce((s, p) => s + p.d, 0);
+    { c: PHASE_GLOW.INHALE, d: pattern.inhaleSec },
+    { c: PHASE_GLOW.HOLD_IN, d: pattern.holdInSec },
+    { c: PHASE_GLOW.EXHALE, d: pattern.exhaleSec },
+    { c: PHASE_GLOW.HOLD_OUT, d: pattern.holdOutSec },
+  ].filter((x) => x.d > 0);
+  if (!phases.length) return PHASE_GLOW.INHALE;
+  const total = phases.reduce((s, x) => s + x.d, 0);
   const cum = [0];
-  phases.forEach((p) => cum.push(cum[cum.length - 1] + p.d / total));
-  const n = phases.length;
-  const w = 0.06; // ширина плавного перехода между фазами
-  const stops = [[phases[0].c, 0]];
+  phases.forEach((x) => cum.push(cum[cum.length - 1] + x.d / total));
+  const n = phases.length, w = 0.06;
+  const stops = [[hexRgb(phases[0].c), 0]];
   for (let i = 1; i < n; i++) {
-    stops.push([phases[i - 1].c, Math.max(0, cum[i] - w)]);
-    stops.push([phases[i].c, Math.min(1, cum[i] + w)]);
+    stops.push([hexRgb(phases[i - 1].c), Math.max(0, cum[i] - w)]);
+    stops.push([hexRgb(phases[i].c), Math.min(1, cum[i] + w)]);
   }
-  stops.push([phases[n - 1].c, Math.max(0, 1 - w)]);
-  stops.push([phases[0].c, 1]); // замыкание в начало (переход в вдох)
-  return 'conic-gradient(from -90deg, ' + stops.map(([c, f]) => c + ' ' + (f * 100).toFixed(2) + '%').join(', ') + ')';
+  stops.push([hexRgb(phases[n - 1].c), Math.max(0, 1 - w)]);
+  stops.push([hexRgb(phases[0].c), 1]);
+  p = ((p % 1) + 1) % 1;
+  for (let i = 1; i < stops.length; i++) {
+    if (p <= stops[i][1]) {
+      const a = stops[i - 1], b = stops[i];
+      const span = (b[1] - a[1]) || 1;
+      const t = Math.max(0, Math.min(1, (p - a[1]) / span));
+      return rgbHex([0, 1, 2].map((k) => a[0][k] + (b[0][k] - a[0][k]) * t));
+    }
+  }
+  return rgbHex(stops[stops.length - 1][0]);
 }
 
 // Привязка визуализатора к текущему DOM экрана практики (вызывается после каждого рендера).
@@ -346,8 +362,8 @@ function screenSession() {
         <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="146" stroke-dasharray="917.3" stroke-dashoffset="917.3"></circle>
       </svg>
       <div class="cycle-ring">
-        <div class="cycle-wheel" id="cycleWheel" style="background:${cycleGradientCss(state.pattern)}"></div>
-        <div class="cycle-rot" id="cycleRot"><div class="cycle-dot"></div></div>
+        <div class="cycle-wheel"></div>
+        <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
       </div>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
@@ -1374,6 +1390,12 @@ window.__start = () => {
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const rot = document.getElementById('cycleRot');
       if (rot) rot.style.transform = 'rotate(' + ((t.cycleProgress || 0) * 360).toFixed(2) + 'deg)';
+      const dot = document.getElementById('cycleDot');
+      if (dot) {
+        const col = phaseColorAt(state.pattern, t.cycleProgress || 0);
+        dot.style.background = col;
+        dot.style.boxShadow = '0 0 12px ' + col;
+      }
       const ol = document.getElementById('overallLeft');
       if (ol) ol.textContent = fmtClock(t.elapsed);
       const mark = document.getElementById('scoreMark');
