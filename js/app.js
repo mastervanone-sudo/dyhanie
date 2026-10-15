@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v20';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v20';
-import { ARTICLES, articleById } from './knowledge.js?v20';
-import { MusicLibrary } from './music.js?v20';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v20';
-import { BINAURAL, binauralByHz } from './binaural.js?v20';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v20';
-import { MatrixBase } from './matrix.js?v20';
-import { Audio, BREATH_VARIANTS } from './audio.js?v20';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v20';
-import { TG, loadScript } from './telegram.js?v20';
-import { BreathSession, fmtClock } from './session.js?v20';
-import { TON } from './ton.js?v20';
-import { STARS, PLANS } from './stars.js?v20';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v21';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v21';
+import { ARTICLES, articleById } from './knowledge.js?v21';
+import { MusicLibrary } from './music.js?v21';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v21';
+import { BINAURAL, binauralByHz } from './binaural.js?v21';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v21';
+import { MatrixBase } from './matrix.js?v21';
+import { Audio, BREATH_VARIANTS } from './audio.js?v21';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v21';
+import { TG, loadScript } from './telegram.js?v21';
+import { BreathSession, fmtClock } from './session.js?v21';
+import { TON } from './ton.js?v21';
+import { STARS, PLANS } from './stars.js?v21';
 
 const app = document.getElementById('app');
 const state = {
@@ -351,14 +351,13 @@ function cycleArcsHtml(pattern) {
   const total = phases.reduce((s, x) => s + x.d, 0) || 1;
   const R = 129, C = 2 * Math.PI * R;
   let cum = 0;
-  return phases.map((p) => {
-    const len = (p.d / total) * C;
-    const gap = Math.max(1, C - len);
+  return phases.map((p, i) => {
     const rot = (-90 + cum * 360).toFixed(3);
     cum += p.d / total;
-    const dash = `${len.toFixed(2)} ${gap.toFixed(2)}`;
-    return `<circle cx="137" cy="137" r="${R}" fill="none" stroke="${rgba(p.color, 0.26)}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`
-      + `<circle cx="137" cy="137" r="${R}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`;
+    // Изначально пусто — сегмент открывается по мере прохождения цикла (обновляется в onTick).
+    const dash = `0 ${C.toFixed(2)}`;
+    return `<circle id="cycleGlow${i}" cx="137" cy="137" r="${R}" fill="none" stroke="${rgba(p.color, 0.26)}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`
+      + `<circle id="cycleArc${i}" cx="137" cy="137" r="${R}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`;
   }).join('');
 }
 
@@ -1420,6 +1419,24 @@ window.__start = () => {
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const cp = t.cycleProgress || 0;
       const col = phaseColorAt(state.pattern, cp);
+      // Открываем цветные сегменты кольца за точкой по мере прохождения цикла.
+      const ph = [
+        { d: state.pattern.inhaleSec }, { d: state.pattern.holdInSec },
+        { d: state.pattern.exhaleSec }, { d: state.pattern.holdOutSec },
+      ].filter((x) => x.d > 0);
+      const phTotal = ph.reduce((s, x) => s + x.d, 0) || 1;
+      const Cc = 2 * Math.PI * 129;
+      let cum = 0;
+      ph.forEach((x, i) => {
+        const frac = x.d / phTotal;
+        const len = Math.max(0, Math.min(frac, cp - cum)) * Cc;
+        const dash = len.toFixed(2) + ' ' + Math.max(1, Cc - len).toFixed(2);
+        const a = document.getElementById('cycleArc' + i);
+        if (a) a.setAttribute('stroke-dasharray', dash);
+        const g = document.getElementById('cycleGlow' + i);
+        if (g) g.setAttribute('stroke-dasharray', dash);
+        cum += frac;
+      });
       const dot = document.getElementById('cycleDot');
       if (dot) {
         // Позиция точки — через left/top (без transform: transform создавал слой, который «швырил»).
