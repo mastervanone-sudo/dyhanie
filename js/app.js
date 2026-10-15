@@ -1333,7 +1333,7 @@ window.__start = () => {
       const ot = document.getElementById('overallText');
       if (ot) ot.textContent = fmtClock(t.elapsed) + ' / ' + fmtClock(total);
       const mark = document.getElementById('scoreMark');
-      if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.progress) * 100).toFixed(1) + '%';
+      if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.phaseProgress) * 100).toFixed(1) + '%';
       const btn = document.getElementById('pauseBtn');
       if (btn) btn.textContent = t.paused ? 'Продолжить' : 'Пауза';
       const sec = Math.floor(t.elapsed);

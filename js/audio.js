@@ -1,6 +1,8 @@
-// РђСѓРґРёРѕ-РґРІРёР¶РѕРє: РјСѓР·С‹РєР° (HTMLAudio), СЃРѕР»СЊС„РµРґР¶РёРѕ Рё Р·РІСѓРє РґС‹С…Р°РЅРёСЏ (WebAudio),
-// РіРѕР»РѕСЃРѕРІС‹Рµ РїРѕРґСЃРєР°Р·РєРё Рё РјРµС‚СЂРѕРЅРѕРј. РџРѕСЂС‚ BreathAudioEngine + SolfeggioEngine +
-// SampleBreathSoundEngine РёР· РЅР°С‚РёРІРЅРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ.
+// Аудио-движок: музыка (HTMLAudio), сольфеджио и звук дыхания (WebAudio),
+// голосовые подсказки и метроном. Порт BreathAudioEngine + SolfeggioEngine +
+// SampleBreathSoundEngine из нативного приложения.
+// Всё звучание проходит через master-узел, с которого снимается спектр для
+// визуализации орба (аудио-реакция).
 import { MusicLibrary } from './music.js';
 
 const CUES = {
@@ -11,14 +13,18 @@ const CUES = {
   metronome_accent: 'audio/cues/metronome_accent.ogg',
 };
 
-// РҐР°СЂР°РєС‚РµСЂС‹ РґС‹С…Р°РЅРёСЏ вЂ” РєР°Рє BreathVariants.kt.
+// Характеры дыхания — как BreathVariants.kt.
 export const BREATH_VARIANTS = [
-  { id: 'recorded2', title: 'Р—Р°РїРёСЃСЊ 2', subtitle: 'Р”С‹С…Р°РЅРёРµ РёР· Р°СѓРґРёРѕ (РІР°СЂРёР°РЅС‚ 2)',
+  {
+    id: 'recorded2', title: 'Запись 2', subtitle: 'Дыхание из аудио (вариант 2)',
     inFull: 'audio/breath/breath_in2.ogg', outFull: 'audio/breath/breath_out2.ogg',
-    inLoop: 'audio/breath/breath_in2_loop.ogg', outLoop: 'audio/breath/breath_out2_loop.ogg' },
-  { id: 'recorded', title: 'Р—Р°РїРёСЃСЊ 1', subtitle: 'Р”С‹С…Р°РЅРёРµ РёР· Р°СѓРґРёРѕ (РІР°СЂРёР°РЅС‚ 1)',
+    inLoop: 'audio/breath/breath_in2_loop.ogg', outLoop: 'audio/breath/breath_out2_loop.ogg',
+  },
+  {
+    id: 'recorded', title: 'Запись 1', subtitle: 'Дыхание из аудио (вариант 1)',
     inFull: 'audio/breath/breath_in.ogg', outFull: 'audio/breath/breath_out.ogg',
-    inLoop: 'audio/breath/breath_in_loop.ogg', outLoop: 'audio/breath/breath_out_loop.ogg' },
+    inLoop: 'audio/breath/breath_in_loop.ogg', outLoop: 'audio/breath/breath_out_loop.ogg',
+  },
 ];
 
 export function breathVariantById(id) {
@@ -31,7 +37,7 @@ class AudioEngine {
     this.buffers = {};
     this._breathSrc = null;
 
-    // РјСѓР·С‹РєР°
+    // музыка
     this.el = null;
     this.musicOn = true;
     this.musicVolume = 1.0;
@@ -41,24 +47,24 @@ class AudioEngine {
     this.playlistIndex = 0;
     this.playing = false;
 
-    // РґС‹С…Р°РЅРёРµ
+    // дыхание
     this.breathOn = true;
     this.breathVolume = 0.8;
     this.breathVariant = 'recorded2';
 
-    // РіРѕР»РѕСЃ Рё РјРµС‚СЂРѕРЅРѕРј
+    // голос и метроном
     this.voiceOn = true;
     this.metronomeOn = false;
 
-    // СЃРѕР»СЊС„РµРґР¶РёРѕ
+    // сольфеджио
     this.solfeggioOn = true;
     this.solfeggioHz = 528;
     this.solfeggioVolume = 0.35;
 
-    this.running = false; // СЃРµСЃСЃРёСЏ РёРґС‘С‚ (РЅРµ РїР°СѓР·Р°)
+    this.running = false; // сессия идёт (не пауза)
   }
 
-  // ---------- РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ ----------
+  // ---------- инициализация ----------
   initMusic() {
     if (this.el) return;
     const el = new window.Audio();
@@ -76,8 +82,8 @@ class AudioEngine {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       this.ctx = new AC();
-      // РњРёРєС€РµСЂ: РІСЃС‘ Р·РІСѓС‡Р°РЅРёРµ РёРґС‘С‚ С‡РµСЂРµР· master -> destination, Р° Р°РЅР°Р»РёР·Р°С‚РѕСЂ
-      // СЃРЅРёРјР°РµС‚ СЃРїРµРєС‚СЂ РґР»СЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё РѕСЂР±Р°.
+      // Микшер: всё звучание идёт через master -> destination, а анализатор
+      // снимает спектр для визуализации орба.
       this.master = this.ctx.createGain();
       this.master.gain.value = 1;
       this.master.connect(this.ctx.destination);
@@ -107,6 +113,7 @@ class AudioEngine {
     } catch (e) { this._musicSrc = null; }
   }
 
+  // Спектр для визуализации: бас/середина/верх и общая громкость (0..1).
   getLevels() {
     if (!this.analyser || !this._freq) return { bass: 0, mid: 0, treble: 0, level: 0 };
     try { this.analyser.getByteFrequencyData(this._freq); } catch (e) { return { bass: 0, mid: 0, treble: 0, level: 0 }; }
@@ -123,7 +130,7 @@ class AudioEngine {
     return { bass, mid, treble, level };
   }
 
-  // Р Р°Р·Р±Р»РѕРєРёСЂРѕРІРєР° Р°СѓРґРёРѕ РїРѕ Р¶РµСЃС‚Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (РІС‹Р·С‹РІР°С‚СЊ РёР· РѕР±СЂР°Р±РѕС‚С‡РёРєР° С‚Р°РїР°).
+  // Разблокировка аудио по жесту пользователя (вызывать из обработчика тапа).
   unlock() {
     this.ensureCtx();
     this.initMusic();
@@ -147,7 +154,7 @@ class AudioEngine {
     await Promise.all([v.inFull, v.outFull, v.inLoop, v.outLoop].map((u) => this._loadBuffer(u)));
   }
 
-  // ---------- РјСѓР·С‹РєР° ----------
+  // ---------- музыка ----------
   setTrack(id) {
     this.trackId = id;
     if (!this.playlistMode && this.el) {
@@ -208,7 +215,7 @@ class AudioEngine {
   stopMusic() { if (this.el) { this.el.pause(); this.el.currentTime = 0; } }
   restartMusic() { if (this.el) { this.el.currentTime = 0; if (this.musicOn && this.running) this.el.play().catch(() => {}); } }
 
-  // ---------- СЃРѕР»СЊС„РµРґР¶РёРѕ ----------
+  // ---------- сольфеджио ----------
   _ensureSolf() {
     if (this._solf) return;
     const ctx = this.ensureCtx();
@@ -218,7 +225,7 @@ class AudioEngine {
     gain.connect(this._out());
     const mults = [1, 2, 3];
     const amps = [1, 0.22, 0.10];
-    const oscs = mults.map((m, i) => {
+    const oscs = mults.map((mult, i) => {
       const o = ctx.createOscillator();
       o.type = 'sine';
       const g = ctx.createGain();
@@ -248,7 +255,7 @@ class AudioEngine {
   setSolfeggioHz(hz) { this.solfeggioHz = hz; this._applySolfFreq(); }
   setSolfeggioVolume(v) { this.solfeggioVolume = Math.min(1, Math.max(0, v)); this._applySolfGain(); }
 
-  // ---------- Р·РІСѓРє РґС‹С…Р°РЅРёСЏ ----------
+  // ---------- звук дыхания ----------
   setBreath(on) {
     this.breathOn = on;
     if (!on) this._stopBreath();
@@ -322,7 +329,7 @@ class AudioEngine {
     this._breathSrc = src;
   }
 
-  // ---------- РіРѕР»РѕСЃ Рё РјРµС‚СЂРѕРЅРѕРј ----------
+  // ---------- голос и метроном ----------
   async _playCue(url, vol) {
     try {
       const ctx = this.ensureCtx();
@@ -351,9 +358,10 @@ class AudioEngine {
     this._playCue(accent ? CUES.metronome_accent : CUES.metronome_tick, 0.9);
   }
 
-  // ---------- СѓРїСЂР°РІР»РµРЅРёРµ СЃРµСЃСЃРёРµР№ ----------
+  // ---------- управление сессией ----------
   startSession() {
     this.running = true;
+    this.ensureCtx();
     this.initMusic();
     this.startMusic();
     this._ensureSolf();

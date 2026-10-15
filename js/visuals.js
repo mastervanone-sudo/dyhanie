@@ -55,13 +55,15 @@ class Visuals {
     this.getCenter = getCenter || null;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = window.innerWidth, h = window.innerHeight;
+    // Канвас может быть пересоздан при перерисовке экрана — всегда
+    // выставляем фактический размер, иначе эффекты рисуются в маленьком углу.
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (w !== this.W || h !== this.H || !this.stars.length) {
       this.W = w; this.H = h;
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      canvas.style.width = w + 'px';
-      canvas.style.height = h + 'px';
-      if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this._initField();
     }
   }
