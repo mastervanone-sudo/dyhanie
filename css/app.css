@@ -10,11 +10,14 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
+html { background: var(--bg); }
 body {
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
   padding-bottom: 84px;
+  overscroll-behavior: none;
+  min-height: 100vh;
 }
 #app { max-width: 520px; margin: 0 auto; padding: 12px 16px 16px; }
 
@@ -285,10 +288,11 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 .ring-track { stroke: rgba(255,255,255,.10); stroke-width: 2.5; }
 .ring-overall { stroke: var(--accent2); stroke-width: 4; opacity: .8; transition: stroke-dashoffset .2s linear; }
 /* кольцо цикла: тёмная дорожка + заполняющаяся дуга + бегущая точка */
-.cycle-ring { position: absolute; left: 50%; top: 50%; z-index: 2; width: 272px; height: 272px; margin: -136px 0 0 -136px; pointer-events: none; }
-.cycle-svg { position: absolute; inset: 0; width: 272px; height: 272px; transform: rotate(-90deg); }
+.cycle-ring { position: absolute; left: 50%; top: 50%; z-index: 2; width: 136px; height: 136px; margin: -68px 0 0 -68px; pointer-events: none; }
+.cycle-svg { position: absolute; inset: 0; width: 136px; height: 136px; transform: rotate(-90deg); }
 .cycle-track { fill: none; stroke: rgba(255,255,255,.20); stroke-width: 3.5; }
-.cycle-arc { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 4px currentColor); }
+.cycle-glow { fill: none; stroke: var(--accent); stroke-width: 13; opacity: .28; stroke-linecap: round; }
+.cycle-arc { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
 .cycle-rot { position: absolute; inset: 0; will-change: transform; }
 .cycle-dot { position: absolute; left: 50%; top: 0; width: 12px; height: 12px; transform: translate(-50%, -50%); border-radius: 50%; background: #fff; box-shadow: 0 0 12px rgba(255,255,255,.9); }
 html.light .ring-track { stroke: rgba(0,0,0,.12); }

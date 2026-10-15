@@ -59,8 +59,9 @@ class Visuals {
     // выставляем фактический размер, иначе эффекты рисуются в маленьком углу.
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    // 100% (а не px) — канвас всегда закрывает экран целиком, без тёмных полос по краям.
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
     if (this.ctx) this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (w !== this.W || h !== this.H || !this.stars.length) {
       this.W = w; this.H = h;

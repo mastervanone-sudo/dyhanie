@@ -362,9 +362,10 @@ function screenSession() {
         <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="148" stroke-dasharray="929.9" stroke-dashoffset="929.9"></circle>
       </svg>
       <div class="cycle-ring">
-        <svg class="cycle-svg" viewBox="0 0 272 272" aria-hidden="true">
-          <circle class="cycle-track" cx="136" cy="136" r="136"></circle>
-          <circle class="cycle-arc" id="cycleArc" cx="136" cy="136" r="136" stroke-dasharray="854.5" stroke-dashoffset="854.5"></circle>
+        <svg class="cycle-svg" viewBox="0 0 136 136" aria-hidden="true">
+          <circle class="cycle-track" cx="68" cy="68" r="68"></circle>
+          <circle class="cycle-glow" id="cycleGlow" cx="68" cy="68" r="68" stroke-dasharray="427.3" stroke-dashoffset="427.3"></circle>
+          <circle class="cycle-arc" id="cycleArc" cx="68" cy="68" r="68" stroke-dasharray="427.3" stroke-dashoffset="427.3"></circle>
         </svg>
         <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
       </div>
@@ -1397,8 +1398,13 @@ window.__start = () => {
       if (rot) rot.style.transform = 'rotate(' + (cp * 360).toFixed(2) + 'deg)';
       const ca = document.getElementById('cycleArc');
       if (ca) {
-        ca.setAttribute('stroke-dashoffset', (854.5 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
+        ca.setAttribute('stroke-dashoffset', (427.3 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
         ca.style.stroke = col;
+      }
+      const cg = document.getElementById('cycleGlow');
+      if (cg) {
+        cg.setAttribute('stroke-dashoffset', (427.3 * (1 - cp)).toFixed(2));
+        cg.style.stroke = col;
       }
       const dot = document.getElementById('cycleDot');
       if (dot) {
@@ -1684,6 +1690,11 @@ document.addEventListener('visibilitychange', () => {
   }
   } catch (e) { console.error('visibility handler', e); }
 });
+
+// Изменение размера окна (в т.ч. Telegram разворачивает/сворачивает вью) —
+// пересчитываем канвас космоса, чтобы не было тёмных полос по краям.
+window.addEventListener('resize', () => { if (state.screen === 'session' && state.session) bindVisuals(); });
+window.addEventListener('orientationchange', () => { if (state.screen === 'session' && state.session) bindVisuals(); });
 
 // ---------- запуск ----------
 function withTimeout(p, ms) {
