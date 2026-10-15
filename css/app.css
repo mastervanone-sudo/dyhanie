@@ -91,11 +91,12 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 2px
 .orb-wrap { flex: 1; min-height: 312px; display: flex; align-items: center; justify-content: center; position: relative; }
 .orb-ring { position: absolute; width: 280px; height: 280px; border-radius: 50%; border: 2px solid rgba(156,231,220,.25); }
 .orb {
-  position: relative; z-index: 1;
+  position: relative; z-index: 3;
   width: 240px; height: 240px; border-radius: 50%; transform: scale(.6);
   background: radial-gradient(circle at 50% 40%, var(--accent2), var(--accent) 60%, #1c8f81);
-  box-shadow: 0 0 60px rgba(47,184,166,.5); display: flex; align-items: center; justify-content: center;
-  transition: transform .12s linear; will-change: transform;
+  box-shadow: 0 0 90px rgba(47,184,166,.28), 0 0 180px rgba(47,184,166,.12);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .12s linear;
 }
 .orb span { color: #04231d; font-size: 26px; font-weight: 700; }
 .orb-inner { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }

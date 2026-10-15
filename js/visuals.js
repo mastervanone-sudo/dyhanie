@@ -160,10 +160,10 @@ class Visuals {
     // Без 'lighter': сложение давало тёмные прямоугольные швы на границах растровых плиток.
 
     // туманность вокруг орба — ровное мягкое свечение
-    const glowR = c.r * (2.2 + 0.7 * this._bassSmooth * react);
+    const glowR = c.r * (2.7 + 0.9 * this._bassSmooth * react);
     const g = ctx.createRadialGradient(c.x, c.y, c.r * 0.5, c.x, c.y, glowR);
-    g.addColorStop(0, col(0.05 + 0.10 * energy));
-    g.addColorStop(0.55, col(0.02 + 0.05 * this._energy * react));
+    g.addColorStop(0, col(0.04 + 0.07 * energy));
+    g.addColorStop(0.5, col(0.015 + 0.035 * this._energy * react));
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(c.x, c.y, glowR, 0, Math.PI * 2); ctx.fill();
@@ -213,11 +213,14 @@ class Visuals {
     ctx.lineWidth = 1.6 + 2.2 * this._bassSmooth * react;
     ctx.beginPath(); ctx.arc(c.x, c.y, c.r * (1.06 + 0.045 * L.bass * react), 0, Math.PI * 2); ctx.stroke();
 
-    // свечение самого орба: нижний порог, чтобы не пропадало
+    // свечение самого орба: мягкое, «воздушное» — два широких слоя с малой непрозрачностью
     if (this.orbEl) {
-      const spread = 14 + 22 * this._bassSmooth * react + 8 * this._energy * react;
-      const alpha = 0.12 + 0.20 * Math.max(energy, L.level * react);
-      this.orbEl.style.boxShadow = `0 0 ${spread.toFixed(0)}px ${col(alpha)}`;
+      const e2 = Math.max(energy, L.level * react);
+      const s1 = 34 + 30 * this._bassSmooth * react + 12 * e2;
+      const s2 = 90 + 60 * this._bassSmooth * react + 24 * e2;
+      const a1 = 0.10 + 0.14 * e2;
+      const a2 = 0.05 + 0.08 * e2;
+      this.orbEl.style.boxShadow = `0 0 ${s1.toFixed(0)}px ${col(a1)}, 0 0 ${s2.toFixed(0)}px ${col(a2)}`;
     }
   }
 }
