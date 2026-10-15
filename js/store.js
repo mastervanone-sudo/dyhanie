@@ -56,6 +56,7 @@ function defaultSession() {
     breathOn: true, breathVolume: 0.8, breathVariant: 'recorded2',
     solfeggioOn: true, solfeggioHz: 528, solfeggioVolume: 0.35,
     vibrateOn: false,
+    visual: 'medium',
   };
 }
 

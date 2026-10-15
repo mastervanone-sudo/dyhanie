@@ -286,3 +286,7 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 .ring-phase { stroke: var(--accent); stroke-width: 7; transition: stroke-dashoffset .12s linear; }
 html.light .ring-track { stroke: rgba(0,0,0,.12); }
 .overall-label { text-align: center; margin: -4px 0 12px; font-size: 13px; }
+
+/* космический слой практики */
+.cosmos { position: fixed; inset: 0; z-index: -1; pointer-events: none; display: block; }
+html.light .cosmos { opacity: .55; }

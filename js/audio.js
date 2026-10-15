@@ -1,6 +1,6 @@
-// Аудио-движок: музыка (HTMLAudio), сольфеджио и звук дыхания (WebAudio),
-// голосовые подсказки и метроном. Порт BreathAudioEngine + SolfeggioEngine +
-// SampleBreathSoundEngine из нативного приложения.
+// РђСѓРґРёРѕ-РґРІРёР¶РѕРє: РјСѓР·С‹РєР° (HTMLAudio), СЃРѕР»СЊС„РµРґР¶РёРѕ Рё Р·РІСѓРє РґС‹С…Р°РЅРёСЏ (WebAudio),
+// РіРѕР»РѕСЃРѕРІС‹Рµ РїРѕРґСЃРєР°Р·РєРё Рё РјРµС‚СЂРѕРЅРѕРј. РџРѕСЂС‚ BreathAudioEngine + SolfeggioEngine +
+// SampleBreathSoundEngine РёР· РЅР°С‚РёРІРЅРѕРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ.
 import { MusicLibrary } from './music.js';
 
 const CUES = {
@@ -11,12 +11,12 @@ const CUES = {
   metronome_accent: 'audio/cues/metronome_accent.ogg',
 };
 
-// Характеры дыхания — как BreathVariants.kt.
+// РҐР°СЂР°РєС‚РµСЂС‹ РґС‹С…Р°РЅРёСЏ вЂ” РєР°Рє BreathVariants.kt.
 export const BREATH_VARIANTS = [
-  { id: 'recorded2', title: 'Запись 2', subtitle: 'Дыхание из аудио (вариант 2)',
+  { id: 'recorded2', title: 'Р—Р°РїРёСЃСЊ 2', subtitle: 'Р”С‹С…Р°РЅРёРµ РёР· Р°СѓРґРёРѕ (РІР°СЂРёР°РЅС‚ 2)',
     inFull: 'audio/breath/breath_in2.ogg', outFull: 'audio/breath/breath_out2.ogg',
     inLoop: 'audio/breath/breath_in2_loop.ogg', outLoop: 'audio/breath/breath_out2_loop.ogg' },
-  { id: 'recorded', title: 'Запись 1', subtitle: 'Дыхание из аудио (вариант 1)',
+  { id: 'recorded', title: 'Р—Р°РїРёСЃСЊ 1', subtitle: 'Р”С‹С…Р°РЅРёРµ РёР· Р°СѓРґРёРѕ (РІР°СЂРёР°РЅС‚ 1)',
     inFull: 'audio/breath/breath_in.ogg', outFull: 'audio/breath/breath_out.ogg',
     inLoop: 'audio/breath/breath_in_loop.ogg', outLoop: 'audio/breath/breath_out_loop.ogg' },
 ];
@@ -31,7 +31,7 @@ class AudioEngine {
     this.buffers = {};
     this._breathSrc = null;
 
-    // музыка
+    // РјСѓР·С‹РєР°
     this.el = null;
     this.musicOn = true;
     this.musicVolume = 1.0;
@@ -41,24 +41,24 @@ class AudioEngine {
     this.playlistIndex = 0;
     this.playing = false;
 
-    // дыхание
+    // РґС‹С…Р°РЅРёРµ
     this.breathOn = true;
     this.breathVolume = 0.8;
     this.breathVariant = 'recorded2';
 
-    // голос и метроном
+    // РіРѕР»РѕСЃ Рё РјРµС‚СЂРѕРЅРѕРј
     this.voiceOn = true;
     this.metronomeOn = false;
 
-    // сольфеджио
+    // СЃРѕР»СЊС„РµРґР¶РёРѕ
     this.solfeggioOn = true;
     this.solfeggioHz = 528;
     this.solfeggioVolume = 0.35;
 
-    this.running = false; // сессия идёт (не пауза)
+    this.running = false; // СЃРµСЃСЃРёСЏ РёРґС‘С‚ (РЅРµ РїР°СѓР·Р°)
   }
 
-  // ---------- инициализация ----------
+  // ---------- РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ ----------
   initMusic() {
     if (this.el) return;
     const el = new window.Audio();
@@ -68,6 +68,7 @@ class AudioEngine {
     el.volume = this.musicOn ? this.musicVolume : 0;
     el.addEventListener('ended', () => this._advancePlaylist());
     this.el = el;
+    this._connectMusicSource();
   }
 
   ensureCtx() {
@@ -75,14 +76,54 @@ class AudioEngine {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       this.ctx = new AC();
+      // РњРёРєС€РµСЂ: РІСЃС‘ Р·РІСѓС‡Р°РЅРёРµ РёРґС‘С‚ С‡РµСЂРµР· master -> destination, Р° Р°РЅР°Р»РёР·Р°С‚РѕСЂ
+      // СЃРЅРёРјР°РµС‚ СЃРїРµРєС‚СЂ РґР»СЏ РІРёР·СѓР°Р»РёР·Р°С†РёРё РѕСЂР±Р°.
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 1;
+      this.master.connect(this.ctx.destination);
+      try {
+        const an = this.ctx.createAnalyser();
+        an.fftSize = 256;
+        an.smoothingTimeConstant = 0.75;
+        this.master.connect(an);
+        this.analyser = an;
+        this._freq = new Uint8Array(an.frequencyBinCount);
+      } catch (e) {}
     }
     if (this.ctx.state === 'suspended') {
       try { const p = this.ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
     }
+    this._connectMusicSource();
     return this.ctx;
   }
 
-  // Разблокировка аудио по жесту пользователя (вызывать из обработчика тапа).
+  _out() { return this.master || (this.ctx ? this.ctx.destination : null); }
+
+  _connectMusicSource() {
+    if (this._musicSrc || !this.el || !this.ctx || !this.master) return;
+    try {
+      this._musicSrc = this.ctx.createMediaElementSource(this.el);
+      this._musicSrc.connect(this.master);
+    } catch (e) { this._musicSrc = null; }
+  }
+
+  getLevels() {
+    if (!this.analyser || !this._freq) return { bass: 0, mid: 0, treble: 0, level: 0 };
+    try { this.analyser.getByteFrequencyData(this._freq); } catch (e) { return { bass: 0, mid: 0, treble: 0, level: 0 }; }
+    const n = this._freq.length;
+    const avg = (a, b) => {
+      let s = 0, c = 0;
+      for (let i = a; i < b; i++) { s += this._freq[i]; c++; }
+      return (c ? s / c : 0) / 255;
+    };
+    const bass = avg(0, Math.max(1, Math.floor(n * 0.13)));
+    const mid = avg(Math.floor(n * 0.13), Math.floor(n * 0.45));
+    const treble = avg(Math.floor(n * 0.45), n);
+    const level = Math.min(1, bass * 0.6 + mid * 0.3 + treble * 0.1);
+    return { bass, mid, treble, level };
+  }
+
+  // Р Р°Р·Р±Р»РѕРєРёСЂРѕРІРєР° Р°СѓРґРёРѕ РїРѕ Р¶РµСЃС‚Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (РІС‹Р·С‹РІР°С‚СЊ РёР· РѕР±СЂР°Р±РѕС‚С‡РёРєР° С‚Р°РїР°).
   unlock() {
     this.ensureCtx();
     this.initMusic();
@@ -106,7 +147,7 @@ class AudioEngine {
     await Promise.all([v.inFull, v.outFull, v.inLoop, v.outLoop].map((u) => this._loadBuffer(u)));
   }
 
-  // ---------- музыка ----------
+  // ---------- РјСѓР·С‹РєР° ----------
   setTrack(id) {
     this.trackId = id;
     if (!this.playlistMode && this.el) {
@@ -167,14 +208,14 @@ class AudioEngine {
   stopMusic() { if (this.el) { this.el.pause(); this.el.currentTime = 0; } }
   restartMusic() { if (this.el) { this.el.currentTime = 0; if (this.musicOn && this.running) this.el.play().catch(() => {}); } }
 
-  // ---------- сольфеджио ----------
+  // ---------- СЃРѕР»СЊС„РµРґР¶РёРѕ ----------
   _ensureSolf() {
     if (this._solf) return;
     const ctx = this.ensureCtx();
     if (!ctx) return;
     const gain = ctx.createGain();
     gain.gain.value = 0;
-    gain.connect(ctx.destination);
+    gain.connect(this._out());
     const mults = [1, 2, 3];
     const amps = [1, 0.22, 0.10];
     const oscs = mults.map((m, i) => {
@@ -207,7 +248,7 @@ class AudioEngine {
   setSolfeggioHz(hz) { this.solfeggioHz = hz; this._applySolfFreq(); }
   setSolfeggioVolume(v) { this.solfeggioVolume = Math.min(1, Math.max(0, v)); this._applySolfGain(); }
 
-  // ---------- звук дыхания ----------
+  // ---------- Р·РІСѓРє РґС‹С…Р°РЅРёСЏ ----------
   setBreath(on) {
     this.breathOn = on;
     if (!on) this._stopBreath();
@@ -250,7 +291,7 @@ class AudioEngine {
     const dur = Math.max(0.2, durSec);
     const now = ctx.currentTime;
     const gain = ctx.createGain();
-    gain.connect(ctx.destination);
+    gain.connect(this._out());
 
     const stretch = full ? (full.duration / dur) : 0;
     const src = ctx.createBufferSource();
@@ -281,7 +322,7 @@ class AudioEngine {
     this._breathSrc = src;
   }
 
-  // ---------- голос и метроном ----------
+  // ---------- РіРѕР»РѕСЃ Рё РјРµС‚СЂРѕРЅРѕРј ----------
   async _playCue(url, vol) {
     try {
       const ctx = this.ensureCtx();
@@ -292,7 +333,7 @@ class AudioEngine {
       src.buffer = buf;
       const g = ctx.createGain();
       g.gain.value = vol;
-      src.connect(g); g.connect(ctx.destination);
+      src.connect(g); g.connect(this._out());
       src.start();
     } catch (e) {}
   }
@@ -310,7 +351,7 @@ class AudioEngine {
     this._playCue(accent ? CUES.metronome_accent : CUES.metronome_tick, 0.9);
   }
 
-  // ---------- управление сессией ----------
+  // ---------- СѓРїСЂР°РІР»РµРЅРёРµ СЃРµСЃСЃРёРµР№ ----------
   startSession() {
     this.running = true;
     this.initMusic();

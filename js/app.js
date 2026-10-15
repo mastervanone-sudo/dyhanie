@@ -6,6 +6,7 @@ import { SOLFEGGIO, toneByHz } from './solfeggio.js';
 import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js';
 import { MatrixBase } from './matrix.js';
 import { Audio, BREATH_VARIANTS } from './audio.js';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js';
 import { TG, loadScript } from './telegram.js';
 import { BreathSession, fmtClock } from './session.js';
 import { TON } from './ton.js';
@@ -256,6 +257,23 @@ const PHASE_COLORS = {
   INHALE: '#6EE7D0', HOLD_IN: '#A78BFA', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
 };
 
+function currentPhaseColor() { return state.phaseColor || PHASE_COLORS.INHALE; }
+
+// Привязка визуализатора к текущему DOM экрана практики (вызывается после каждого рендера).
+function bindVisuals() {
+  const cv = document.getElementById('cosmos');
+  const orb = document.getElementById('orb');
+  if (!cv || !orb) return;
+  OrbVisuals.attach(cv, orb, () => {
+    const r = orb.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2 };
+  });
+  OrbVisuals.setSampler(() => Audio.getLevels());
+  OrbVisuals.setIntensity(Progress.session.visual || 'medium');
+  OrbVisuals.setPhase(currentPhaseColor());
+  if (!OrbVisuals.running) OrbVisuals.start();
+}
+
 function cycleFraction(pattern, phaseKey, progress) {
   const phases = [
     ['INHALE', pattern.inhaleSec],
@@ -300,6 +318,7 @@ function screenSession() {
   const p = state.pattern;
   const sheet = state.musicSheet ? musicSheetHtml(p) : '';
   return `<div class="session">
+    <canvas id="cosmos" class="cosmos"></canvas>
     <div class="s-top">
       <button class="back light" onclick="window.__stop()">‹</button>
       <span class="s-title" id="sName">${p.name}</span>
@@ -375,6 +394,9 @@ function musicSheetHtml(pattern) {
       <button class="list-row pick" onclick="window.__openSolfeggio()">${s.solfeggioHz} Гц — ${toneByHz(s.solfeggioHz).title} <span class="tag">Выбрать</span></button>
       <label class="field-label">Громкость частоты</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.solfeggioVolume}" oninput="window.__setSolfeggioVolume(this.value)" />
+      <h3>Эффекты орба</h3>
+      <div class="chips">${VISUAL_LEVELS.map((l) => `<button class="chip ${s.visual === l ? 'on' : ''}" onclick="window.__setVisual('${l}')">${VISUAL_LABELS[l]}</button>`).join('')}</div>
+      <p class="muted">Космос и реакция на музыку: «Средне» — заметно, «Слабо» — сдержанно, «Выкл» — без эффектов.</p>
       <h3>Звук дыхания</h3>
       ${toggleRow('Вдох и выдох', s.breathOn, 'window.__setBreath')}
       <label class="field-label">Громкость дыхания</label>
@@ -1062,6 +1084,7 @@ function render() {
   else if (state.screen === 'audio') html = screenAudio();
   if (state.rename) html += renameModalHtml();
   app.innerHTML = html;
+  if (state.screen === 'session' && state.session) bindVisuals();
 }
 
 // ---------- навигация ----------
@@ -1270,6 +1293,7 @@ window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play()
 window.__start = () => {
   Audio.unlock();
   applySessionToAudio();
+  state.phaseColor = PHASE_COLORS.INHALE;
   go('session');
   Audio.startSession();
   const total = state.minutes * 60;
@@ -1279,6 +1303,8 @@ window.__start = () => {
   const session = new BreathSession(state.pattern, state.minutes, {
     onPhase: (ph, durSec) => {
       accentPending = true;
+      state.phaseColor = PHASE_COLORS[ph.key] || state.phaseColor;
+      OrbVisuals.setPhase(state.phaseColor);
       Audio.cue(ph.key);
       Audio.breathPhase(ph.key, durSec);
       if (Progress.session.vibrateOn) TG.haptic('impact', 'medium');
@@ -1315,6 +1341,8 @@ window.__start = () => {
     },
     onDone: (summary) => {
       Audio.stopSession();
+      OrbVisuals.stop();
+      state.phaseColor = null;
       const res = Progress.recordSession(summary);
       Progress.addSessionLog({
         patternId: summary.patternId, patternName: summary.patternName,
@@ -1328,6 +1356,7 @@ window.__start = () => {
     },
   });
   state.session = session;
+  bindVisuals();
   session.start();
 };
 
@@ -1354,6 +1383,8 @@ window.__stop = () => {
   }
   state.session = null;
   Audio.stopSession();
+  OrbVisuals.stop();
+  state.phaseColor = null;
   go('home');
 };
 
@@ -1373,6 +1404,13 @@ window.__setVoice = (v) => { Audio.voiceOn = v; persistAndRerender({ voiceOn: v 
 window.__setMetronome = (v) => { Audio.metronomeOn = v; persistAndRerender({ metronomeOn: v }); render(); };
 window.__setVibrate = (v) => { persistAndRerender({ vibrateOn: v }); render(); };
 window.__setSolfeggio = (v) => { Audio.setSolfeggio(v); persistAndRerender({ solfeggioOn: v }); render(); };
+window.__setVisual = (v) => {
+  Progress.setSession({ visual: v });
+  Progress.save();
+  OrbVisuals.setIntensity(v);
+  if (v !== 'off' && state.screen === 'session' && !OrbVisuals.running) OrbVisuals.start();
+  render();
+};
 window.__setMusicVolume = (v) => { Audio.setMusicVolume(parseFloat(v)); Progress.setSession({ musicVolume: parseFloat(v) }); };
 window.__setSolfeggioVolume = (v) => { Audio.setSolfeggioVolume(parseFloat(v)); Progress.setSession({ solfeggioVolume: parseFloat(v) }); };
 window.__setBreathVolume = (v) => { Audio.setBreathVolume(parseFloat(v)); Progress.setSession({ breathVolume: parseFloat(v) }); };
