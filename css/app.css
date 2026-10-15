@@ -281,9 +281,9 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 /* круговая шкала прогресса практики */
 .orb-svg { position: absolute; top: 50%; left: 50%; width: 300px; height: 300px; transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
 .orb-svg circle { fill: none; stroke-linecap: round; }
-.ring-track { stroke: rgba(255,255,255,.13); stroke-width: 3; }
-.ring-overall { stroke: var(--accent2); stroke-width: 5; transition: stroke-dashoffset .2s linear; }
-.ring-phase { stroke: var(--accent); stroke-width: 7; transition: stroke-dashoffset .12s linear; }
+.ring-track { stroke: rgba(255,255,255,.10); stroke-width: 2.5; }
+.ring-overall { stroke: var(--accent2); stroke-width: 4; opacity: .8; transition: stroke-dashoffset .2s linear; }
+.ring-phase { stroke: var(--accent); stroke-width: 5.5; opacity: .85; transition: stroke-dashoffset .12s linear; }
 html.light .ring-track { stroke: rgba(0,0,0,.12); }
 .overall-label { text-align: center; margin: -4px 0 12px; font-size: 13px; }
 

@@ -256,8 +256,12 @@ function phaseSlider(label, field, value) {
 const PHASE_COLORS = {
   INHALE: '#6EE7D0', HOLD_IN: '#A78BFA', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
 };
+// Отдельные «свечные» цвета фаз — светлее, чтобы свечение не пропадало на задержке/выдохе.
+const PHASE_GLOW = {
+  INHALE: '#40D1BE', HOLD_IN: '#8B8CF8', EXHALE: '#5E82F7', HOLD_OUT: '#2DD4A8',
+};
 
-function currentPhaseColor() { return state.phaseColor || PHASE_COLORS.INHALE; }
+function currentPhaseColor() { return state.phaseGlow || PHASE_GLOW.INHALE; }
 
 // Привязка визуализатора к текущему DOM экрана практики (вызывается после каждого рендера).
 function bindVisuals() {
@@ -326,9 +330,9 @@ function screenSession() {
     </div>
     <div class="orb-wrap">
       <svg class="orb-svg" viewBox="0 0 300 300" aria-hidden="true">
-        <circle class="ring-track" cx="150" cy="150" r="142"></circle>
-        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="142" stroke-dasharray="892.2" stroke-dashoffset="892.2"></circle>
-        <circle class="ring-phase" id="ringPhase" cx="150" cy="150" r="122" stroke-dasharray="766.5" stroke-dashoffset="766.5"></circle>
+        <circle class="ring-track" cx="150" cy="150" r="146"></circle>
+        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="146" stroke-dasharray="917.3" stroke-dashoffset="917.3"></circle>
+        <circle class="ring-phase" id="ringPhase" cx="150" cy="150" r="127" stroke-dasharray="797.9" stroke-dashoffset="797.9"></circle>
       </svg>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
@@ -1293,7 +1297,7 @@ window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play()
 window.__start = () => {
   Audio.unlock();
   applySessionToAudio();
-  state.phaseColor = PHASE_COLORS.INHALE;
+  state.phaseGlow = PHASE_GLOW.INHALE;
   go('session');
   Audio.startSession();
   const total = state.minutes * 60;
@@ -1303,8 +1307,8 @@ window.__start = () => {
   const session = new BreathSession(state.pattern, state.minutes, {
     onPhase: (ph, durSec) => {
       accentPending = true;
-      state.phaseColor = PHASE_COLORS[ph.key] || state.phaseColor;
-      OrbVisuals.setPhase(state.phaseColor);
+      state.phaseGlow = PHASE_GLOW[ph.key] || state.phaseGlow;
+      OrbVisuals.setPhase(state.phaseGlow);
       Audio.cue(ph.key);
       Audio.breathPhase(ph.key, durSec);
       if (Progress.session.vibrateOn) TG.haptic('impact', 'medium');
@@ -1321,7 +1325,7 @@ window.__start = () => {
       const overall = 1 - t.remaining / total;
       const fill = document.getElementById('overallFill');
       if (fill) fill.style.width = (overall * 100).toFixed(1) + '%';
-      const C1 = 892.2, C2 = 766.5;
+      const C1 = 917.3, C2 = 797.9;
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const rp = document.getElementById('ringPhase');
@@ -1342,7 +1346,7 @@ window.__start = () => {
     onDone: (summary) => {
       Audio.stopSession();
       OrbVisuals.stop();
-      state.phaseColor = null;
+      state.phaseGlow = null;
       const res = Progress.recordSession(summary);
       Progress.addSessionLog({
         patternId: summary.patternId, patternName: summary.patternName,
@@ -1384,7 +1388,7 @@ window.__stop = () => {
   state.session = null;
   Audio.stopSession();
   OrbVisuals.stop();
-  state.phaseColor = null;
+  state.phaseGlow = null;
   go('home');
 };
 
