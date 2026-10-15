@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v19';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v19';
-import { ARTICLES, articleById } from './knowledge.js?v19';
-import { MusicLibrary } from './music.js?v19';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v19';
-import { BINAURAL, binauralByHz } from './binaural.js?v19';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v19';
-import { MatrixBase } from './matrix.js?v19';
-import { Audio, BREATH_VARIANTS } from './audio.js?v19';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v19';
-import { TG, loadScript } from './telegram.js?v19';
-import { BreathSession, fmtClock } from './session.js?v19';
-import { TON } from './ton.js?v19';
-import { STARS, PLANS } from './stars.js?v19';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v20';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v20';
+import { ARTICLES, articleById } from './knowledge.js?v20';
+import { MusicLibrary } from './music.js?v20';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v20';
+import { BINAURAL, binauralByHz } from './binaural.js?v20';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v20';
+import { MatrixBase } from './matrix.js?v20';
+import { Audio, BREATH_VARIANTS } from './audio.js?v20';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v20';
+import { TG, loadScript } from './telegram.js?v20';
+import { BreathSession, fmtClock } from './session.js?v20';
+import { TON } from './ton.js?v20';
+import { STARS, PLANS } from './stars.js?v20';
 
 const app = document.getElementById('app');
 const state = {
@@ -257,12 +257,13 @@ function phaseSlider(label, field, value) {
 }
 
 // ---------- сессия ----------
+// Цвета фаз. Вдох и первая задержка — местами (по схеме).
 const PHASE_COLORS = {
-  INHALE: '#6EE7D0', HOLD_IN: '#A78BFA', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
+  INHALE: '#A78BFA', HOLD_IN: '#6EE7D0', EXHALE: '#7CA6F8', HOLD_OUT: '#2A3646',
 };
 // Отдельные «свечные» цвета фаз — светлее, чтобы свечение не пропадало на задержке/выдохе.
 const PHASE_GLOW = {
-  INHALE: '#40D1BE', HOLD_IN: '#8B8CF8', EXHALE: '#5E82F7', HOLD_OUT: '#2DD4A8',
+  INHALE: '#8B8CF8', HOLD_IN: '#40D1BE', EXHALE: '#5E82F7', HOLD_OUT: '#2DD4A8',
 };
 
 function currentPhaseColor() { return state.phaseGlow || PHASE_GLOW.INHALE; }
@@ -339,6 +340,28 @@ function scoreBarHtml(pattern) {
   return `<div class="score-bar" id="scoreBar">${segs}<div class="score-mark" id="scoreMark"></div></div>`;
 }
 
+// Кольцо цикла: четыре цветных сегмента по цветам фаз (как в партитуре).
+function cycleArcsHtml(pattern) {
+  const phases = [
+    { color: PHASE_COLORS.INHALE, d: pattern.inhaleSec },
+    { color: PHASE_COLORS.HOLD_IN, d: pattern.holdInSec },
+    { color: PHASE_COLORS.EXHALE, d: pattern.exhaleSec },
+    { color: PHASE_COLORS.HOLD_OUT, d: pattern.holdOutSec },
+  ].filter((x) => x.d > 0);
+  const total = phases.reduce((s, x) => s + x.d, 0) || 1;
+  const R = 129, C = 2 * Math.PI * R;
+  let cum = 0;
+  return phases.map((p) => {
+    const len = (p.d / total) * C;
+    const gap = Math.max(1, C - len);
+    const rot = (-90 + cum * 360).toFixed(3);
+    cum += p.d / total;
+    const dash = `${len.toFixed(2)} ${gap.toFixed(2)}`;
+    return `<circle cx="137" cy="137" r="${R}" fill="none" stroke="${rgba(p.color, 0.26)}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`
+      + `<circle cx="137" cy="137" r="${R}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${dash}" transform="rotate(${rot} 137 137)"></circle>`;
+  }).join('');
+}
+
 function phaseLegendHtml(pattern) {
   const phases = [
     ['INHALE', 'Вдох', pattern.inhaleSec],
@@ -367,11 +390,8 @@ function screenSession() {
       </svg>
       <div class="cycle-ring">
         <svg class="cycle-svg" viewBox="0 0 274 274" aria-hidden="true">
-          <g transform="rotate(-90 137 137)">
-            <circle class="cycle-track" cx="137" cy="137" r="129"></circle>
-            <circle class="cycle-glow" id="cycleGlow" cx="137" cy="137" r="129" stroke-dasharray="810.5" stroke-dashoffset="810.5"></circle>
-            <circle class="cycle-arc" id="cycleArc" cx="137" cy="137" r="129" stroke-dasharray="810.5" stroke-dashoffset="810.5"></circle>
-          </g>
+          <circle class="cycle-track" cx="137" cy="137" r="129"></circle>
+          ${cycleArcsHtml(state.pattern)}
         </svg>
         <div class="cycle-dot" id="cycleDot"></div>
       </div>
@@ -1400,16 +1420,6 @@ window.__start = () => {
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const cp = t.cycleProgress || 0;
       const col = phaseColorAt(state.pattern, cp);
-      const ca = document.getElementById('cycleArc');
-      if (ca) {
-        ca.setAttribute('stroke-dashoffset', (810.5 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
-        ca.style.stroke = col;
-      }
-      const cg = document.getElementById('cycleGlow');
-      if (cg) {
-        cg.setAttribute('stroke-dashoffset', (810.5 * (1 - cp)).toFixed(2));
-        cg.style.stroke = rgba(col, 0.26); // прозрачность через цвет, а не opacity (opacity давал слой-шов)
-      }
       const dot = document.getElementById('cycleDot');
       if (dot) {
         // Позиция точки — через left/top (без transform: transform создавал слой, который «швырил»).
