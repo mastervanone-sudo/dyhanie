@@ -17,6 +17,10 @@ export const TG = {
     if (!w) return;
     try { w.ready(); } catch (e) {}
     try { w.expand(); } catch (e) {}
+    // Фон/шапка/нижняя панель мини-аппа: по умолчанию чёрные — отсюда «полоски» по краям.
+    try { if (w.setBackgroundColor) w.setBackgroundColor('#0e2a30'); } catch (e) {}
+    try { if (w.setHeaderColor) w.setHeaderColor('#0e2a30'); } catch (e) {}
+    try { if (w.setBottomBarColor) w.setBottomBarColor('#0b2228'); } catch (e) {}
   },
   theme() {
     const w = wa();
