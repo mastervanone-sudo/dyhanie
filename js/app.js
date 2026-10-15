@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v13';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v13';
-import { ARTICLES, articleById } from './knowledge.js?v13';
-import { MusicLibrary } from './music.js?v13';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v13';
-import { BINAURAL, binauralByHz } from './binaural.js?v13';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v13';
-import { MatrixBase } from './matrix.js?v13';
-import { Audio, BREATH_VARIANTS } from './audio.js?v13';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v13';
-import { TG, loadScript } from './telegram.js?v13';
-import { BreathSession, fmtClock } from './session.js?v13';
-import { TON } from './ton.js?v13';
-import { STARS, PLANS } from './stars.js?v13';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v14';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v14';
+import { ARTICLES, articleById } from './knowledge.js?v14';
+import { MusicLibrary } from './music.js?v14';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v14';
+import { BINAURAL, binauralByHz } from './binaural.js?v14';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v14';
+import { MatrixBase } from './matrix.js?v14';
+import { Audio, BREATH_VARIANTS } from './audio.js?v14';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v14';
+import { TG, loadScript } from './telegram.js?v14';
+import { BreathSession, fmtClock } from './session.js?v14';
+import { TON } from './ton.js?v14';
+import { STARS, PLANS } from './stars.js?v14';
 
 const app = document.getElementById('app');
 const state = {
@@ -1412,11 +1412,12 @@ window.__start = () => {
       }
       const dot = document.getElementById('cycleDot');
       if (dot) {
-        // Позиция точки считается напрямую (без вращения слоя — вращение давало тёмную полосу).
+        // Позиция точки — через left/top (без transform: transform создавал слой, который «швырил»).
         const ang = cp * 2 * Math.PI;
         const dx = 132 + 132 * Math.sin(ang);
         const dy = 132 - 132 * Math.cos(ang);
-        dot.style.transform = 'translate(' + (dx - 3).toFixed(1) + 'px,' + (dy - 3).toFixed(1) + 'px)';
+        dot.style.left = dx.toFixed(1) + 'px';
+        dot.style.top = dy.toFixed(1) + 'px';
         dot.style.background = col;
         dot.style.boxShadow = '0 0 10px ' + col;
       }
