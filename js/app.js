@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v25';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v25';
-import { ARTICLES, articleById } from './knowledge.js?v25';
-import { MusicLibrary } from './music.js?v25';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v25';
-import { BINAURAL, binauralByHz } from './binaural.js?v25';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v25';
-import { MatrixBase } from './matrix.js?v25';
-import { Audio, BREATH_VARIANTS } from './audio.js?v25';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v25';
-import { TG, loadScript } from './telegram.js?v25';
-import { BreathSession, fmtClock } from './session.js?v25';
-import { TON } from './ton.js?v25';
-import { STARS, PLANS } from './stars.js?v25';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v26';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v26';
+import { ARTICLES, articleById } from './knowledge.js?v26';
+import { MusicLibrary } from './music.js?v26';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v26';
+import { BINAURAL, binauralByHz } from './binaural.js?v26';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v26';
+import { MatrixBase } from './matrix.js?v26';
+import { Audio, BREATH_VARIANTS } from './audio.js?v26';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v26';
+import { TG, loadScript } from './telegram.js?v26';
+import { BreathSession, fmtClock } from './session.js?v26';
+import { TON } from './ton.js?v26';
+import { STARS, PLANS } from './stars.js?v26';
 
 const app = document.getElementById('app');
 const state = {
@@ -170,13 +170,23 @@ function screenHome() {
 }
 
 function patternCard(p) {
-  return `<button class="card" onclick="window.__open('${p.id}')">
+  const phases = [
+    ['INHALE', 'Вдох', p.inhaleSec],
+    ['HOLD_IN', 'Задержка', p.holdInSec],
+    ['EXHALE', 'Выдох', p.exhaleSec],
+    ['HOLD_OUT', 'Задержка', p.holdOutSec],
+  ].filter((x) => x[2] > 0);
+  const segs = phases.map(([k, , d]) => `<div class="p-seg" style="flex:${d} 1 0%;background:${PHASE_COLORS[k]}"></div>`).join('');
+  const legend = phases.map(([k, label, d]) => `<span><i style="background:${PHASE_COLORS[k]}"></i>${label} ${fmtSec(d)}</span>`).join('');
+  return `<button class="card big" onclick="window.__open('${p.id}')">
     <div class="card-top">
       ${goalChip(p.goal)}
       <span class="bpm">${breathsPerMinute(p)} дых/мин</span>
     </div>
     <div class="card-name">${p.name}</div>
     <div class="card-desc">${p.shortDescription}</div>
+    <div class="p-score">${segs}</div>
+    <div class="p-legend">${legend}</div>
   </button>`;
 }
 
