@@ -362,7 +362,10 @@ function screenSession() {
         <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="146" stroke-dasharray="917.3" stroke-dashoffset="917.3"></circle>
       </svg>
       <div class="cycle-ring">
-        <div class="cycle-wheel"></div>
+        <svg class="cycle-svg" viewBox="0 0 264 264" aria-hidden="true">
+          <circle class="cycle-track" cx="132" cy="132" r="126"></circle>
+          <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="126" stroke-dasharray="791.7" stroke-dashoffset="791.7"></circle>
+        </svg>
         <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
       </div>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
@@ -1388,11 +1391,17 @@ window.__start = () => {
       const C1 = 917.3;
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
+      const cp = t.cycleProgress || 0;
+      const col = phaseColorAt(state.pattern, cp);
       const rot = document.getElementById('cycleRot');
-      if (rot) rot.style.transform = 'rotate(' + ((t.cycleProgress || 0) * 360).toFixed(2) + 'deg)';
+      if (rot) rot.style.transform = 'rotate(' + (cp * 360).toFixed(2) + 'deg)';
+      const ca = document.getElementById('cycleArc');
+      if (ca) {
+        ca.setAttribute('stroke-dashoffset', (791.7 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
+        ca.style.stroke = col;
+      }
       const dot = document.getElementById('cycleDot');
       if (dot) {
-        const col = phaseColorAt(state.pattern, t.cycleProgress || 0);
         dot.style.background = col;
         dot.style.boxShadow = '0 0 12px ' + col;
       }
