@@ -1,19 +1,19 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v30';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v30';
-import { ARTICLES, articleById } from './knowledge.js?v30';
-import { MusicLibrary } from './music.js?v30';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v30';
-import { BINAURAL, binauralByHz } from './binaural.js?v30';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v30';
-import { MatrixBase } from './matrix.js?v30';
-import { Audio, BREATH_VARIANTS } from './audio.js?v30';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v30';
-import { TG, loadScript } from './telegram.js?v30';
-import { BreathSession, fmtClock } from './session.js?v30';
-import { TON } from './ton.js?v30';
-import { STARS, PLANS } from './stars.js?v30';
-import { Referral } from './referral.js?v30';
-import { APP_VERSION } from './config.js?v30';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v31';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v31';
+import { ARTICLES, articleById } from './knowledge.js?v31';
+import { MusicLibrary } from './music.js?v31';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v31';
+import { BINAURAL, binauralByHz } from './binaural.js?v31';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v31';
+import { MatrixBase } from './matrix.js?v31';
+import { Audio, BREATH_VARIANTS } from './audio.js?v31';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v31';
+import { TG, loadScript } from './telegram.js?v31';
+import { BreathSession, fmtClock } from './session.js?v31';
+import { TON } from './ton.js?v31';
+import { STARS, PLANS } from './stars.js?v31';
+import { Referral } from './referral.js?v31';
+import { APP_VERSION } from './config.js?v31';
 
 const app = document.getElementById('app');
 const state = {

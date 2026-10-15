@@ -64,6 +64,13 @@ export const TG = {
     const w = wa();
     if (w && w.BackButton) { w.BackButton.offClick(); w.BackButton.hide(); }
   },
+  openInvoice(url, callback) {
+    const w = wa();
+    if (w && w.openInvoice) {
+      try { w.openInvoice(url, (status) => { try { if (callback) callback(status); } catch (e) {} }); return true; } catch (e) {}
+    }
+    return false;
+  },
   share(url, text) {
     const w = wa();
     const link = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
