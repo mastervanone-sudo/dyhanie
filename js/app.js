@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v17';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v17';
-import { ARTICLES, articleById } from './knowledge.js?v17';
-import { MusicLibrary } from './music.js?v17';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v17';
-import { BINAURAL, binauralByHz } from './binaural.js?v17';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v17';
-import { MatrixBase } from './matrix.js?v17';
-import { Audio, BREATH_VARIANTS } from './audio.js?v17';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v17';
-import { TG, loadScript } from './telegram.js?v17';
-import { BreathSession, fmtClock } from './session.js?v17';
-import { TON } from './ton.js?v17';
-import { STARS, PLANS } from './stars.js?v17';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v18';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v18';
+import { ARTICLES, articleById } from './knowledge.js?v18';
+import { MusicLibrary } from './music.js?v18';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v18';
+import { BINAURAL, binauralByHz } from './binaural.js?v18';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v18';
+import { MatrixBase } from './matrix.js?v18';
+import { Audio, BREATH_VARIANTS } from './audio.js?v18';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v18';
+import { TG, loadScript } from './telegram.js?v18';
+import { BreathSession, fmtClock } from './session.js?v18';
+import { TON } from './ton.js?v18';
+import { STARS, PLANS } from './stars.js?v18';
 
 const app = document.getElementById('app');
 const state = {
@@ -362,15 +362,15 @@ function screenSession() {
     </div>
     <div class="orb-wrap">
       <svg class="orb-svg" viewBox="0 0 300 300" aria-hidden="true">
-        <circle class="ring-track" cx="150" cy="150" r="148"></circle>
-        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="148" stroke-dasharray="929.9" stroke-dashoffset="929.9"></circle>
+        <circle class="ring-track" cx="150" cy="150" r="144"></circle>
+        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="144" stroke-dasharray="904.8" stroke-dashoffset="904.8"></circle>
       </svg>
       <div class="cycle-ring">
         <svg class="cycle-svg" viewBox="0 0 264 264" aria-hidden="true">
           <g transform="rotate(-90 132 132)">
-            <circle class="cycle-track" cx="132" cy="132" r="132"></circle>
-            <circle class="cycle-glow" id="cycleGlow" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
-            <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
+            <circle class="cycle-track" cx="132" cy="132" r="124"></circle>
+            <circle class="cycle-glow" id="cycleGlow" cx="132" cy="132" r="124" stroke-dasharray="779.1" stroke-dashoffset="779.1"></circle>
+            <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="124" stroke-dasharray="779.1" stroke-dashoffset="779.1"></circle>
           </g>
         </svg>
         <div class="cycle-dot" id="cycleDot"></div>
@@ -1395,27 +1395,27 @@ window.__start = () => {
       const overall = 1 - t.remaining / total;
       const fill = document.getElementById('overallFill');
       if (fill) fill.style.width = (overall * 100).toFixed(1) + '%';
-      const C1 = 929.9;
+      const C1 = 904.8;
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const cp = t.cycleProgress || 0;
       const col = phaseColorAt(state.pattern, cp);
       const ca = document.getElementById('cycleArc');
       if (ca) {
-        ca.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
+        ca.setAttribute('stroke-dashoffset', (779.1 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
         ca.style.stroke = col;
       }
       const cg = document.getElementById('cycleGlow');
       if (cg) {
-        cg.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2));
+        cg.setAttribute('stroke-dashoffset', (779.1 * (1 - cp)).toFixed(2));
         cg.style.stroke = rgba(col, 0.26); // прозрачность через цвет, а не opacity (opacity давал слой-шов)
       }
       const dot = document.getElementById('cycleDot');
       if (dot) {
         // Позиция точки — через left/top (без transform: transform создавал слой, который «швырил»).
         const ang = cp * 2 * Math.PI;
-        const dx = 132 + 132 * Math.sin(ang);
-        const dy = 132 - 132 * Math.cos(ang);
+        const dx = 132 + 124 * Math.sin(ang);
+        const dy = 132 - 124 * Math.cos(ang);
         dot.style.left = dx.toFixed(1) + 'px';
         dot.style.top = dy.toFixed(1) + 'px';
         dot.style.background = col;
