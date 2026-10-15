@@ -286,10 +286,9 @@ function scoreBarHtml(pattern) {
     ['HOLD_OUT', pattern.holdOutSec],
   ].filter((x) => x[1] > 0);
   const total = phases.reduce((s, x) => s + x[1], 0) || 1;
-  // Один цикл = 100% ширины контейнера; лента из трёх копий даёт бесшовный цикл.
-  const one = phases.map(([k, d]) =>
-    `<div class="score-seg" style="width:${((d / total) * 100 / 3).toFixed(4)}%;background:${PHASE_COLORS[k]}"></div>`).join('');
-  return `<div class="score-loop" id="scoreLoop"><div class="score-strip" id="scoreStrip">${one}${one}${one}</div><div class="score-playhead"></div></div>`;
+  const segs = phases.map(([k, d]) =>
+    `<div class="score-seg" style="width:${(d / total) * 100}%;background:${PHASE_COLORS[k]}"></div>`).join('');
+  return `<div class="score-bar" id="scoreBar">${segs}<div class="score-mark" id="scoreMark"></div></div>`;
 }
 
 function phaseLegendHtml(pattern) {
@@ -1326,11 +1325,16 @@ window.__start = () => {
       }
       const ol = document.getElementById('overallLeft');
       if (ol) ol.textContent = fmtClock(t.elapsed);
-      const strip = document.getElementById('scoreStrip');
-      if (strip) {
-        const ph = 0.28; // где стоит курсор (доля ширины)
+      const mark = document.getElementById('scoreMark');
+      if (mark) {
         const p = t.cycleProgress || 0;
-        strip.style.transform = 'translateX(' + (-((1 + p - ph) / 3) * 100).toFixed(3) + '%)';
+        mark.style.left = (p * 100).toFixed(2) + '%';
+        // на стыке цикла линия мягко гаснет у правого края и появляется у левого
+        const edge = 0.08;
+        let o = 1;
+        if (p < edge) o = p / edge;
+        else if (p > 1 - edge) o = (1 - p) / edge;
+        mark.style.opacity = Math.max(0, Math.min(1, o)).toFixed(2);
       }
       const btn = document.getElementById('pauseBtn');
       if (btn) btn.textContent = t.paused ? 'Продолжить' : 'Пауза';
