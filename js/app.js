@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v11';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v11';
-import { ARTICLES, articleById } from './knowledge.js?v11';
-import { MusicLibrary } from './music.js?v11';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v11';
-import { BINAURAL, binauralByHz } from './binaural.js?v11';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v11';
-import { MatrixBase } from './matrix.js?v11';
-import { Audio, BREATH_VARIANTS } from './audio.js?v11';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v11';
-import { TG, loadScript } from './telegram.js?v11';
-import { BreathSession, fmtClock } from './session.js?v11';
-import { TON } from './ton.js?v11';
-import { STARS, PLANS } from './stars.js?v11';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v12';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v12';
+import { ARTICLES, articleById } from './knowledge.js?v12';
+import { MusicLibrary } from './music.js?v12';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v12';
+import { BINAURAL, binauralByHz } from './binaural.js?v12';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v12';
+import { MatrixBase } from './matrix.js?v12';
+import { Audio, BREATH_VARIANTS } from './audio.js?v12';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v12';
+import { TG, loadScript } from './telegram.js?v12';
+import { BreathSession, fmtClock } from './session.js?v12';
+import { TON } from './ton.js?v12';
+import { STARS, PLANS } from './stars.js?v12';
 
 const app = document.getElementById('app');
 const state = {
@@ -363,11 +363,13 @@ function screenSession() {
       </svg>
       <div class="cycle-ring">
         <svg class="cycle-svg" viewBox="0 0 264 264" aria-hidden="true">
-          <circle class="cycle-track" cx="132" cy="132" r="132"></circle>
-          <circle class="cycle-glow" id="cycleGlow" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
-          <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
+          <g transform="rotate(-90 132 132)">
+            <circle class="cycle-track" cx="132" cy="132" r="132"></circle>
+            <circle class="cycle-glow" id="cycleGlow" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
+            <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
+          </g>
         </svg>
-        <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
+        <div class="cycle-dot" id="cycleDot"></div>
       </div>
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
@@ -1394,8 +1396,6 @@ window.__start = () => {
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const cp = t.cycleProgress || 0;
       const col = phaseColorAt(state.pattern, cp);
-      const rot = document.getElementById('cycleRot');
-      if (rot) rot.style.transform = 'rotate(' + (cp * 360).toFixed(2) + 'deg)';
       const ca = document.getElementById('cycleArc');
       if (ca) {
         ca.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
@@ -1408,8 +1408,13 @@ window.__start = () => {
       }
       const dot = document.getElementById('cycleDot');
       if (dot) {
+        // Позиция точки считается напрямую (без вращения слоя — вращение давало тёмную полосу).
+        const ang = cp * 2 * Math.PI;
+        const dx = 132 + 132 * Math.sin(ang);
+        const dy = 132 - 132 * Math.cos(ang);
+        dot.style.transform = 'translate(' + (dx - 3).toFixed(1) + 'px,' + (dy - 3).toFixed(1) + 'px)';
         dot.style.background = col;
-        dot.style.boxShadow = '0 0 12px ' + col;
+        dot.style.boxShadow = '0 0 10px ' + col;
       }
       const ol = document.getElementById('overallLeft');
       if (ol) ol.textContent = fmtClock(t.elapsed);
