@@ -157,7 +157,7 @@ class Visuals {
     const col = (a) => `rgba(${rgb.r},${rgb.g},${rgb.b},${clamp01(a)})`;
 
     ctx.clearRect(0, 0, this.W, this.H);
-    ctx.globalCompositeOperation = 'lighter';
+    // Без 'lighter': сложение давало тёмные прямоугольные швы на границах растровых плиток.
 
     // туманность вокруг орба — ровное мягкое свечение
     const glowR = c.r * (2.2 + 0.7 * this._bassSmooth * react);
@@ -212,8 +212,6 @@ class Visuals {
     ctx.strokeStyle = col(ringA);
     ctx.lineWidth = 1.6 + 2.2 * this._bassSmooth * react;
     ctx.beginPath(); ctx.arc(c.x, c.y, c.r * (1.06 + 0.045 * L.bass * react), 0, Math.PI * 2); ctx.stroke();
-
-    ctx.globalCompositeOperation = 'source-over';
 
     // свечение самого орба: нижний порог, чтобы не пропадало
     if (this.orbEl) {

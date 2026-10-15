@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v12';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v12';
-import { ARTICLES, articleById } from './knowledge.js?v12';
-import { MusicLibrary } from './music.js?v12';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v12';
-import { BINAURAL, binauralByHz } from './binaural.js?v12';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v12';
-import { MatrixBase } from './matrix.js?v12';
-import { Audio, BREATH_VARIANTS } from './audio.js?v12';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v12';
-import { TG, loadScript } from './telegram.js?v12';
-import { BreathSession, fmtClock } from './session.js?v12';
-import { TON } from './ton.js?v12';
-import { STARS, PLANS } from './stars.js?v12';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v13';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v13';
+import { ARTICLES, articleById } from './knowledge.js?v13';
+import { MusicLibrary } from './music.js?v13';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v13';
+import { BINAURAL, binauralByHz } from './binaural.js?v13';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v13';
+import { MatrixBase } from './matrix.js?v13';
+import { Audio, BREATH_VARIANTS } from './audio.js?v13';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v13';
+import { TG, loadScript } from './telegram.js?v13';
+import { BreathSession, fmtClock } from './session.js?v13';
+import { TON } from './ton.js?v13';
+import { STARS, PLANS } from './stars.js?v13';
 
 const app = document.getElementById('app');
 const state = {
@@ -275,6 +275,10 @@ function hexRgb(hex) {
 }
 function rgbHex(a) {
   return '#' + a.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+}
+function rgba(hex, a) {
+  const c = hexRgb(hex);
+  return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
 }
 function phaseColorAt(pattern, p) {
   const phases = [
@@ -1404,7 +1408,7 @@ window.__start = () => {
       const cg = document.getElementById('cycleGlow');
       if (cg) {
         cg.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2));
-        cg.style.stroke = col;
+        cg.style.stroke = rgba(col, 0.26); // прозрачность через цвет, а не opacity (opacity давал слой-шов)
       }
       const dot = document.getElementById('cycleDot');
       if (dot) {
