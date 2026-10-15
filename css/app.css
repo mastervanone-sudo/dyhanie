@@ -287,12 +287,12 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 .copy-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
 
 /* круговая шкала прогресса практики */
-.orb-svg { position: absolute; top: 50%; left: 50%; z-index: 2; width: 300px; height: 300px; transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
+.orb-svg { position: absolute; top: 50%; left: 50%; z-index: 4; width: 300px; height: 300px; transform: translate(-50%, -50%) rotate(-90deg); pointer-events: none; }
 .orb-svg circle { fill: none; stroke-linecap: round; }
 .ring-track { stroke: rgba(255,255,255,.10); stroke-width: 2.5; }
 .ring-overall { stroke: var(--accent2); stroke-width: 4; transition: stroke-dashoffset .2s linear; }
 /* кольцо цикла: тёмная дорожка + заполняющаяся дуга + бегущая точка */
-.cycle-ring { position: absolute; left: 50%; top: 50%; z-index: 2; width: 264px; height: 264px; margin: -132px 0 0 -132px; pointer-events: none; }
+.cycle-ring { position: absolute; left: 50%; top: 50%; z-index: 4; width: 264px; height: 264px; margin: -132px 0 0 -132px; pointer-events: none; }
 .cycle-svg { position: absolute; inset: 0; width: 264px; height: 264px; }
 .cycle-track { fill: none; stroke: rgba(255,255,255,.20); stroke-width: 1.8; }
 .cycle-glow { fill: none; stroke: var(--accent); stroke-width: 13; stroke-linecap: round; }

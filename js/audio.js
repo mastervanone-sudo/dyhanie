@@ -3,7 +3,7 @@
 // SampleBreathSoundEngine из нативного приложения.
 // Всё звучание проходит через master-узел, с которого снимается спектр для
 // визуализации орба (аудио-реакция).
-import { MusicLibrary } from './music.js?v16';
+import { MusicLibrary } from './music.js?v17';
 
 const CUES = {
   voice_inhale: 'audio/cues/voice_inhale.ogg',
