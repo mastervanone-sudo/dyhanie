@@ -337,8 +337,13 @@ function screenSession() {
       <div class="orb" id="orb"><div class="orb-inner"><span id="phase">Вдох</span>
         <span class="orb-left" id="phaseLeft">4</span></div></div>
     </div>
-    <div class="overall"><div class="overall-fill" id="overallFill" style="width:0%"></div></div>
-    <div class="overall-label"><span class="muted" id="overallText">0:00 / ${fmtClock(state.minutes * 60)}</span></div>
+    <div class="practice-progress">
+      <div class="pp-bar"><div class="pp-fill" id="overallFill" style="width:0%"></div></div>
+      <div class="pp-times">
+        <span id="overallLeft">0:00</span>
+        <span class="muted">${fmtClock(state.minutes * 60)}</span>
+      </div>
+    </div>
     <div class="s-meta">
       <div><b id="elapsed">0:00</b><span>время</span></div>
       <div><b id="cycles">0</b><span>циклов</span></div>
@@ -1329,9 +1334,13 @@ window.__start = () => {
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const rp = document.getElementById('ringPhase');
-      if (rp) rp.setAttribute('stroke-dashoffset', (C2 * (1 - (t.phaseProgress || 0))).toFixed(2));
-      const ot = document.getElementById('overallText');
-      if (ot) ot.textContent = fmtClock(t.elapsed) + ' / ' + fmtClock(total);
+      if (rp) {
+        // внутреннее кольцо = полный цикл дыхания: замыкается и начинается заново
+        rp.setAttribute('stroke-dashoffset', (C2 * (1 - (t.cycleProgress || 0))).toFixed(2));
+        rp.style.stroke = PHASE_GLOW[t.phaseKey] || PHASE_GLOW.INHALE;
+      }
+      const ol = document.getElementById('overallLeft');
+      if (ol) ol.textContent = fmtClock(t.elapsed);
       const mark = document.getElementById('scoreMark');
       if (mark) mark.style.left = (cycleFraction(state.pattern, t.phaseKey, t.phaseProgress) * 100).toFixed(1) + '%';
       const btn = document.getElementById('pauseBtn');

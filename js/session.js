@@ -123,12 +123,14 @@ export class BreathSession {
     }
 
     const cycles = Math.floor(elapsedSec / this.cycleSec);
+    const cycleProgress = this.cycleSec > 0 ? (elapsedSec % this.cycleSec) / this.cycleSec : 0;
     if (this.handlers.onTick) {
       this.handlers.onTick({
         phase: PHASES[cur.phase],
         phaseKey: cur.phase,
         phaseLeft: Math.max(0, Math.ceil(cur.dur - local)),
         phaseProgress: cur.dur > 0 ? Math.min(1, Math.max(0, local / cur.dur)) : 1,
+        cycleProgress,
         scale,
         remaining: Math.max(0, this.totalSec - elapsedSec),
         elapsed: elapsedSec,

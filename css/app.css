@@ -283,10 +283,17 @@ html.light .s-top .s-title, html.light .orb span, html.light .orb-left { color: 
 .orb-svg circle { fill: none; stroke-linecap: round; }
 .ring-track { stroke: rgba(255,255,255,.10); stroke-width: 2.5; }
 .ring-overall { stroke: var(--accent2); stroke-width: 4; opacity: .8; transition: stroke-dashoffset .2s linear; }
-.ring-phase { stroke: var(--accent); stroke-width: 5.5; opacity: .85; transition: stroke-dashoffset .12s linear; }
+.ring-phase { stroke: var(--accent); stroke-width: 5.5; opacity: .9; }
 html.light .ring-track { stroke: rgba(0,0,0,.12); }
 .overall-label { text-align: center; margin: -4px 0 12px; font-size: 13px; }
 
 /* космический слой практики */
 .cosmos { position: fixed; inset: 0; z-index: -1; pointer-events: none; display: block; }
 html.light .cosmos { opacity: .55; }
+
+/* прогресс практики под кругом */
+.practice-progress { width: 78%; max-width: 430px; margin: 10px 0 14px; }
+.pp-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); overflow: hidden; }
+.pp-fill { height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .2s linear; }
+.pp-times { display: flex; justify-content: space-between; font-size: 13px; margin-top: 6px; padding: 0 2px; color: var(--accent2); }
+.pp-times .muted { color: var(--muted); }
