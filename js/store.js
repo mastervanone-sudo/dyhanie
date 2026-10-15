@@ -55,6 +55,7 @@ function defaultSession() {
     voiceOn: true, metronomeOn: false,
     breathOn: true, breathVolume: 0.8, breathVariant: 'recorded2',
     solfeggioOn: true, solfeggioHz: 528, solfeggioVolume: 0.35,
+    binauralOn: false, binauralHz: 10, binauralVolume: 0.3,
     vibrateOn: false,
     visual: 'medium',
   };

@@ -61,6 +61,11 @@ class AudioEngine {
     this.solfeggioHz = 528;
     this.solfeggioVolume = 0.35;
 
+    // бинауральные ритмы
+    this.binauralOn = false;
+    this.binauralHz = 10;
+    this.binauralVolume = 0.3;
+
     this.running = false; // сессия идёт (не пауза)
   }
 
@@ -255,6 +260,55 @@ class AudioEngine {
   setSolfeggioHz(hz) { this.solfeggioHz = hz; this._applySolfFreq(); }
   setSolfeggioVolume(v) { this.solfeggioVolume = Math.min(1, Math.max(0, v)); this._applySolfGain(); }
 
+  // ---------- бинауральные ритмы ----------
+  // Базовый тон ~200 Гц; в левое ухо идёт f - ritm/2, в правое — f + ritm/2.
+  _ensureBinaural() {
+    if (this._bin) return;
+    const ctx = this.ensureCtx();
+    if (!ctx) return;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    gain.connect(this._out());
+    const make = (pan) => {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      const g = ctx.createGain();
+      g.gain.value = 0.5;
+      o.connect(g);
+      if (ctx.createStereoPanner) {
+        const p = ctx.createStereoPanner();
+        p.pan.value = pan;
+        g.connect(p); p.connect(gain);
+      } else {
+        g.connect(gain);
+      }
+      o.start();
+      return o;
+    };
+    const left = make(-1);
+    const right = make(1);
+    this._bin = { gain, left, right };
+    this._applyBinauralFreq();
+    this._applyBinauralGain();
+  }
+
+  _applyBinauralFreq() {
+    if (!this._bin || !this.ctx) return;
+    const base = 200, half = this.binauralHz / 2, now = this.ctx.currentTime;
+    this._bin.left.frequency.setTargetAtTime(base - half, now, 0.1);
+    this._bin.right.frequency.setTargetAtTime(base + half, now, 0.1);
+  }
+
+  _applyBinauralGain() {
+    if (!this._bin || !this.ctx) return;
+    const target = (this.binauralOn && this.running) ? this.binauralVolume : 0;
+    this._bin.gain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
+  }
+
+  setBinaural(on) { this.binauralOn = on; this._ensureBinaural(); this._applyBinauralGain(); }
+  setBinauralHz(hz) { this.binauralHz = hz; this._applyBinauralFreq(); }
+  setBinauralVolume(v) { this.binauralVolume = Math.min(1, Math.max(0, v)); this._applyBinauralGain(); }
+
   // ---------- звук дыхания ----------
   setBreath(on) {
     this.breathOn = on;
@@ -366,6 +420,8 @@ class AudioEngine {
     this.startMusic();
     this._ensureSolf();
     this._applySolfGain();
+    this._ensureBinaural();
+    this._applyBinauralGain();
     this.preloadVariant(this.breathVariant);
   }
 
@@ -374,12 +430,14 @@ class AudioEngine {
     this.pauseMusic();
     this._stopBreath();
     this._applySolfGain();
+    this._applyBinauralGain();
   }
 
   resumeSession() {
     this.running = true;
     if (this.musicOn) this.startMusic();
     this._applySolfGain();
+    this._applyBinauralGain();
   }
 
   stopSession() {
@@ -387,6 +445,7 @@ class AudioEngine {
     this.stopMusic();
     this._stopBreath();
     this._applySolfGain();
+    this._applyBinauralGain();
   }
 }
 

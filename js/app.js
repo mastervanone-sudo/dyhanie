@@ -3,6 +3,7 @@ import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js';
 import { ARTICLES, articleById } from './knowledge.js';
 import { MusicLibrary } from './music.js';
 import { SOLFEGGIO, toneByHz } from './solfeggio.js';
+import { BINAURAL, binauralByHz } from './binaural.js';
 import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js';
 import { MatrixBase } from './matrix.js';
 import { Audio, BREATH_VARIANTS } from './audio.js';
@@ -66,6 +67,9 @@ function applySessionToAudio() {
   Audio.solfeggioOn = s.solfeggioOn;
   Audio.solfeggioHz = s.solfeggioHz;
   Audio.solfeggioVolume = s.solfeggioVolume;
+  Audio.binauralOn = s.binauralOn;
+  Audio.binauralHz = s.binauralHz;
+  Audio.binauralVolume = s.binauralVolume;
 }
 
 // ---------- общие части ----------
@@ -344,6 +348,7 @@ function screenSession() {
       ${toggleRow('Метроном', Progress.session.metronomeOn, 'window.__setMetronome')}
       ${toggleRow('Вибрация', Progress.session.vibrateOn, 'window.__setVibrate')}
       ${toggleRow('Частота сольфеджио', Progress.session.solfeggioOn, 'window.__setSolfeggio')}
+      ${toggleRow('Бинауральные ритмы', Progress.session.binauralOn, 'window.__setBinaural')}
     </div>
     ${sheet}
   </div>`;
@@ -387,6 +392,12 @@ function musicSheetHtml(pattern) {
       <button class="list-row pick" onclick="window.__openSolfeggio()">${s.solfeggioHz} Гц — ${toneByHz(s.solfeggioHz).title} <span class="tag">Выбрать</span></button>
       <label class="field-label">Громкость частоты</label>
       <input type="range" min="0" max="1" step="0.01" value="${s.solfeggioVolume}" oninput="window.__setSolfeggioVolume(this.value)" />
+      <h3>Бинауральные ритмы</h3>
+      ${toggleRow('Бинауральные ритмы', s.binauralOn, 'window.__setBinaural')}
+      <button class="list-row pick" onclick="window.__openBinaural()">${binauralByHz(s.binauralHz).hz} Гц — ${binauralByHz(s.binauralHz).title} · ${binauralByHz(s.binauralHz).label} <span class="tag">Выбрать</span></button>
+      <label class="field-label">Громкость ритма</label>
+      <input type="range" min="0" max="1" step="0.01" value="${s.binauralVolume}" oninput="window.__setBinauralVolume(this.value)" />
+      <p class="muted">Нужны наушники: в левое и правое ухо подаются близкие частоты, а мозг слышит разницу — это и есть ритм.</p>
       <h3>Эффекты орба</h3>
       <div class="chips">${VISUAL_LEVELS.map((l) => `<button class="chip ${s.visual === l ? 'on' : ''}" onclick="window.__setVisual('${l}')">${VISUAL_LABELS[l]}</button>`).join('')}</div>
       <p class="muted">Космос и реакция на музыку: «Средне» — заметно, «Слабо» — сдержанно, «Выкл» — без эффектов.</p>
@@ -428,6 +439,22 @@ function screenSolfeggio() {
     </button>`).join('');
   return `${header('Частоты сольфеджио', true)}
     <p class="sub">Играют мягким тоном вместе с музыкой. Значения традиционные, не являются медицинской рекомендацией.</p>
+    <div class="list">${list}</div>`;
+}
+
+function screenBinaural() {
+  const cur = Progress.session.binauralHz;
+  const list = BINAURAL.map((b) =>
+    `<button class="list-row pick ${b.hz === cur ? 'sel' : ''}" onclick="window.__selectBinaural(${b.hz})">
+      <span class="dot" style="background:${b.color}"></span>
+      <span class="list-col">
+        <span class="list-t" style="color:${b.color}">${b.hz} Гц — ${b.title} · ${b.label}</span>
+        <span class="muted">${b.desc}</span>
+      </span>
+      ${b.hz === cur ? '<span class="tag">играет</span>' : ''}
+    </button>`).join('');
+  return `${header('Бинауральные ритмы', true)}
+    <p class="sub">Бинауральные ритмы работают в наушниках: в левое и правое ухо подаются две близкие частоты, а мозг воспринимает их разницу как ритм (биение). Значения традиционные, не являются медицинской рекомендацией.</p>
     <div class="list">${list}</div>`;
 }
 
@@ -1062,6 +1089,7 @@ function render() {
   else if (state.screen === 'knowledgeDetail') html = screenKnowledgeDetail();
   else if (state.screen === 'music') html = screenMusic();
   else if (state.screen === 'solfeggio') html = screenSolfeggio();
+  else if (state.screen === 'binaural') html = screenBinaural();
   else if (state.screen === 'playlist') html = screenPlaylist();
   else if (state.screen === 'profile') html = screenProfile();
   else if (state.screen === 'journalEditor') html = screenJournalEditor();
@@ -1091,7 +1119,7 @@ window.__back = () => {
   else if (s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse' || s === 'energyBuilder') go('energy');
   else if (s === 'energyEdit') go('energyBuilder');
   else if (s === 'audio') { stopAudioPoll(); if (extEl) extEl.pause(); go(state.audioBack || 'home'); }
-  else if (s === 'music' || s === 'solfeggio' || s === 'playlist') go(state.session ? 'session' : 'home');
+  else if (s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'binaural') go(state.session ? 'session' : 'home');
   else go('home');
 };
 window.__setMins = (v) => { state.minutes = parseInt(v, 10); document.getElementById('minsVal').textContent = v; };
@@ -1441,6 +1469,14 @@ window.__selectSolfeggio = (hz) => {
   persistAndRerender({ solfeggioHz: hz });
   go(state.session ? 'session' : 'home');
 };
+window.__setBinaural = (v) => { Audio.setBinaural(v); persistAndRerender({ binauralOn: v }); render(); };
+window.__setBinauralVolume = (v) => { Audio.setBinauralVolume(parseFloat(v)); Progress.setSession({ binauralVolume: parseFloat(v) }); };
+window.__openBinaural = () => go('binaural');
+window.__selectBinaural = (hz) => {
+  Audio.setBinauralHz(hz);
+  persistAndRerender({ binauralHz: hz });
+  go(state.session ? 'session' : 'home');
+};
 window.__setBreathVariant = (id) => {
   Audio.setBreathVariant(id);
   persistAndRerender({ breathVariant: id });
@@ -1616,7 +1652,7 @@ function withTimeout(p, ms) {
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
     if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
-        || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'profile' || s === 'stats'
+        || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'binaural' || s === 'profile' || s === 'stats'
         || s === 'energy' || s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse'
         || s === 'energyBuilder' || s === 'matrix') {
       render();
