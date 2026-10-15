@@ -3,7 +3,7 @@
 // SampleBreathSoundEngine из нативного приложения.
 // Всё звучание проходит через master-узел, с которого снимается спектр для
 // визуализации орба (аудио-реакция).
-import { MusicLibrary } from './music.js?v32';
+import { MusicLibrary } from './music.js?v33';
 
 const CUES = {
   voice_inhale: 'audio/cues/voice_inhale.ogg',
@@ -24,6 +24,11 @@ export const BREATH_VARIANTS = [
     id: 'recorded', title: 'Запись 1', subtitle: 'Дыхание из аудио (вариант 1)',
     inFull: 'audio/breath/breath_in.ogg', outFull: 'audio/breath/breath_out.ogg',
     inLoop: 'audio/breath/breath_in_loop.ogg', outLoop: 'audio/breath/breath_out_loop.ogg',
+  },
+  {
+    id: 'recorded3', title: 'Запись 3', subtitle: 'Новая запись (вариант 3)',
+    inFull: 'audio/breath/breath_in3.ogg', outFull: 'audio/breath/breath_out3.ogg',
+    inLoop: 'audio/breath/breath_in3_loop.ogg', outLoop: 'audio/breath/breath_out3_loop.ogg',
   },
 ];
 

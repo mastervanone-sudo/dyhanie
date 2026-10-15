@@ -1,7 +1,7 @@
 // Партнёрская программа: привязка реферала, статистика и заявка на выплату.
 // Вся логика — на сервере; здесь только вызовы с проверенным initData.
-import { API_BASE, BOT_USERNAME } from './config.js?v32';
-import { TG } from './telegram.js?v32';
+import { API_BASE, BOT_USERNAME } from './config.js?v33';
+import { TG } from './telegram.js?v33';
 
 export const Referral = {
   get configured() { return API_BASE.length > 0; },
