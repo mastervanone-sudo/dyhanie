@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v10';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v10';
-import { ARTICLES, articleById } from './knowledge.js?v10';
-import { MusicLibrary } from './music.js?v10';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v10';
-import { BINAURAL, binauralByHz } from './binaural.js?v10';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v10';
-import { MatrixBase } from './matrix.js?v10';
-import { Audio, BREATH_VARIANTS } from './audio.js?v10';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v10';
-import { TG, loadScript } from './telegram.js?v10';
-import { BreathSession, fmtClock } from './session.js?v10';
-import { TON } from './ton.js?v10';
-import { STARS, PLANS } from './stars.js?v10';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v11';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v11';
+import { ARTICLES, articleById } from './knowledge.js?v11';
+import { MusicLibrary } from './music.js?v11';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v11';
+import { BINAURAL, binauralByHz } from './binaural.js?v11';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v11';
+import { MatrixBase } from './matrix.js?v11';
+import { Audio, BREATH_VARIANTS } from './audio.js?v11';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v11';
+import { TG, loadScript } from './telegram.js?v11';
+import { BreathSession, fmtClock } from './session.js?v11';
+import { TON } from './ton.js?v11';
+import { STARS, PLANS } from './stars.js?v11';
 
 const app = document.getElementById('app');
 const state = {
