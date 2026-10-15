@@ -11,6 +11,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
 html { background: var(--bg); }
+html, body { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -81,7 +83,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 2px
 .nav-ico { font-size: 20px; }
 
 /* сессия */
-.session { position: fixed; inset: 0; background: radial-gradient(circle at 50% 38%, #12414b, var(--bg) 70%); display: flex; flex-direction: column; align-items: center; z-index: 40; overflow-y: auto; padding-bottom: 24px; }
+.session { position: fixed; inset: 0; background: radial-gradient(circle at 50% 38%, #12414b, var(--bg) 70%); display: flex; flex-direction: column; align-items: center; z-index: 40; overflow-y: auto; padding-bottom: 24px; scrollbar-width: none; -ms-overflow-style: none; }
+.session::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .s-top { width: 100%; display: flex; align-items: center; gap: 12px; padding: 16px; font-weight: 600; }
 .s-top .s-title { flex: 1; }
 .s-remain { color: var(--muted); font-weight: 500; }
@@ -299,7 +302,7 @@ html.light .ring-track { stroke: rgba(0,0,0,.12); }
 .overall-label { text-align: center; margin: -4px 0 12px; font-size: 13px; }
 
 /* космический слой практики */
-.cosmos { position: fixed; inset: 0; z-index: -1; pointer-events: none; display: block; }
+.cosmos { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; display: block; }
 html.light .cosmos { opacity: .55; }
 
 /* прогресс практики под кругом */
