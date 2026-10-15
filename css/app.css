@@ -311,3 +311,6 @@ html.light .cosmos { opacity: .55; }
 .pp-fill { height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .2s linear; }
 .pp-times { display: flex; justify-content: space-between; font-size: 13px; margin-top: 6px; padding: 0 2px; color: var(--accent2); }
 .pp-times .muted { color: var(--muted); }
+
+/* кнопка возврата к идущей практике */
+.resume-practice { position: fixed; right: 14px; bottom: 88px; z-index: 60; background: var(--accent); color: #04231d; border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.4); cursor: pointer; }

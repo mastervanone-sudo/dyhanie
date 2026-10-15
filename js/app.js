@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v24';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v24';
-import { ARTICLES, articleById } from './knowledge.js?v24';
-import { MusicLibrary } from './music.js?v24';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v24';
-import { BINAURAL, binauralByHz } from './binaural.js?v24';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v24';
-import { MatrixBase } from './matrix.js?v24';
-import { Audio, BREATH_VARIANTS } from './audio.js?v24';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v24';
-import { TG, loadScript } from './telegram.js?v24';
-import { BreathSession, fmtClock } from './session.js?v24';
-import { TON } from './ton.js?v24';
-import { STARS, PLANS } from './stars.js?v24';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v25';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v25';
+import { ARTICLES, articleById } from './knowledge.js?v25';
+import { MusicLibrary } from './music.js?v25';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v25';
+import { BINAURAL, binauralByHz } from './binaural.js?v25';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v25';
+import { MatrixBase } from './matrix.js?v25';
+import { Audio, BREATH_VARIANTS } from './audio.js?v25';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v25';
+import { TG, loadScript } from './telegram.js?v25';
+import { BreathSession, fmtClock } from './session.js?v25';
+import { TON } from './ton.js?v25';
+import { STARS, PLANS } from './stars.js?v25';
 
 const app = document.getElementById('app');
 const state = {
@@ -1176,6 +1176,10 @@ function render() {
   else if (state.screen === 'matrix') html = screenMatrix();
   else if (state.screen === 'audio') html = screenAudio();
   if (state.rename) html += renameModalHtml();
+  // Если практика идёт, но мы на другом экране — показываем кнопку возврата.
+  if (state.session && state.screen !== 'session') {
+    html += `<button class="resume-practice" onclick="window.__resumeSession()">▶ Вернуться к практике</button>`;
+  }
   app.innerHTML = html;
   if (state.screen === 'session' && state.session) bindVisuals();
 }
@@ -1384,6 +1388,8 @@ window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play()
 
 // ---------- сессия ----------
 window.__start = () => {
+  // Если практика уже идёт — не плодим вторую, а возвращаемся к текущей.
+  if (state.session) { go('session'); return; }
   Audio.unlock();
   applySessionToAudio();
   state.phaseGlow = PHASE_GLOW.INHALE;
@@ -1491,6 +1497,7 @@ window.__start = () => {
   session.start();
 };
 
+window.__resumeSession = () => { if (state.session) go('session'); };
 window.__pause = () => {
   if (!state.session) return;
   const paused = state.session.toggle();
