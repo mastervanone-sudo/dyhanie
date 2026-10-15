@@ -1,5 +1,5 @@
 // TON Connect — подключение кошелька. Работает, если загружен CDN @tonconnect/ui.
-import { Progress } from './store.js?v22';
+import { Progress } from './store.js?v23';
 
 let tonConnectUI = null;
 let manifestUrl = '';

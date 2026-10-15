@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v22';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v22';
-import { ARTICLES, articleById } from './knowledge.js?v22';
-import { MusicLibrary } from './music.js?v22';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v22';
-import { BINAURAL, binauralByHz } from './binaural.js?v22';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v22';
-import { MatrixBase } from './matrix.js?v22';
-import { Audio, BREATH_VARIANTS } from './audio.js?v22';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v22';
-import { TG, loadScript } from './telegram.js?v22';
-import { BreathSession, fmtClock } from './session.js?v22';
-import { TON } from './ton.js?v22';
-import { STARS, PLANS } from './stars.js?v22';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v23';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v23';
+import { ARTICLES, articleById } from './knowledge.js?v23';
+import { MusicLibrary } from './music.js?v23';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v23';
+import { BINAURAL, binauralByHz } from './binaural.js?v23';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v23';
+import { MatrixBase } from './matrix.js?v23';
+import { Audio, BREATH_VARIANTS } from './audio.js?v23';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v23';
+import { TG, loadScript } from './telegram.js?v23';
+import { BreathSession, fmtClock } from './session.js?v23';
+import { TON } from './ton.js?v23';
+import { STARS, PLANS } from './stars.js?v23';
 
 const app = document.getElementById('app');
 const state = {
@@ -149,6 +149,9 @@ function screenHome() {
       <div class="hub-d">Короткие статьи о пользе дыхания и науке</div>
       <div class="hub-m">${ARTICLES.length} статей</div></div>
     </button>
+    <div class="cards">${patternCards}</div>
+    <h3>Свои ритмы</h3>
+    <div class="cards">${customCards}</div>
     <h3>Программы</h3>
     <button class="hub-card" onclick="window.__openEnergy()">
       <div class="hub-ico">🔷</div>
@@ -162,9 +165,6 @@ function screenHome() {
       <div class="hub-d">Метод волновой генетики: звуковые программы и описание методики</div>
       <div class="hub-m">Ознакомительный раздел</div></div>
     </button>
-    <div class="cards">${patternCards}</div>
-    <h3>Свои ритмы</h3>
-    <div class="cards">${customCards}</div>
     <button class="ghost" onclick="window.__newCustom()">+ Создать свой ритм</button>
     ${navBar()}`;
 }
@@ -647,6 +647,11 @@ function screenProfile() {
   const premium = Progress.data.premium;
   const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
   const days = buildDayMap();
+  const ach = ACHIEVEMENTS.map((a) => {
+    const on = d.achievements.includes(a.id);
+    return `<div class="ach ${on ? 'on' : ''}"><div class="ach-ico">${a.icon}</div>
+      <div class="ach-t">${a.title}</div><div class="ach-d">${a.desc}</div></div>`;
+  }).join('');
 
   const journalRows = Progress.journal.length
     ? Progress.journal.map((e) => {
@@ -701,6 +706,8 @@ function screenProfile() {
       <div><div class="hub-t">Кошелёк TON</div>
       <div class="hub-d">NFT-достижения и оплата в TON</div></div>
     </button>
+    <h3>Достижения</h3>
+    <div class="ach-grid">${ach}</div>
     <h3>Дневник состояний</h3>
     <button class="ghost" onclick="window.__addJournal()">＋ Запись о состоянии</button>
     <div class="j-list">${journalRows}</div>
@@ -1089,11 +1096,6 @@ function stopAudioPoll() { if (audioPoll) { clearInterval(audioPoll); audioPoll 
 // ---------- прогресс ----------
 function screenProgress() {
   const d = Progress.data;
-  const ach = ACHIEVEMENTS.map((a) => {
-    const on = d.achievements.includes(a.id);
-    return `<div class="ach ${on ? 'on' : ''}"><div class="ach-ico">${a.icon}</div>
-      <div class="ach-t">${a.title}</div><div class="ach-d">${a.desc}</div></div>`;
-  }).join('');
   return `${header('Прогресс')}
     <div class="level-card">
       <div class="level-num">Уровень ${Progress.level}</div>
@@ -1107,8 +1109,6 @@ function screenProgress() {
       <div class="stat"><b>${d.bestStreak}</b><span>рекорд</span></div>
       <div class="stat"><b>${Math.round(d.totalMinutes)}</b><span>минут</span></div>
     </div>
-    <h3>Достижения</h3>
-    <div class="ach-grid">${ach}</div>
     <button class="ghost" onclick="window.__share()">Поделиться результатом</button>
     ${navBar()}`;
 }
