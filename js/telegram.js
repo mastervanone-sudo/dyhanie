@@ -11,6 +11,10 @@ export const TG = {
     const w = wa();
     return w && w.initDataUnsafe ? w.initDataUnsafe.user || null : null;
   },
+  get startParam() {
+    const w = wa();
+    return w && w.initDataUnsafe ? (w.initDataUnsafe.start_param || '') : '';
+  },
 
   ready() {
     const w = wa();

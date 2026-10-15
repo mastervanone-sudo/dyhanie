@@ -1,17 +1,18 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v28';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v28';
-import { ARTICLES, articleById } from './knowledge.js?v28';
-import { MusicLibrary } from './music.js?v28';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v28';
-import { BINAURAL, binauralByHz } from './binaural.js?v28';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v28';
-import { MatrixBase } from './matrix.js?v28';
-import { Audio, BREATH_VARIANTS } from './audio.js?v28';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v28';
-import { TG, loadScript } from './telegram.js?v28';
-import { BreathSession, fmtClock } from './session.js?v28';
-import { TON } from './ton.js?v28';
-import { STARS, PLANS } from './stars.js?v28';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v29';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v29';
+import { ARTICLES, articleById } from './knowledge.js?v29';
+import { MusicLibrary } from './music.js?v29';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v29';
+import { BINAURAL, binauralByHz } from './binaural.js?v29';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v29';
+import { MatrixBase } from './matrix.js?v29';
+import { Audio, BREATH_VARIANTS } from './audio.js?v29';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v29';
+import { TG, loadScript } from './telegram.js?v29';
+import { BreathSession, fmtClock } from './session.js?v29';
+import { TON } from './ton.js?v29';
+import { STARS, PLANS } from './stars.js?v29';
+import { Referral } from './referral.js?v29';
 
 const app = document.getElementById('app');
 const state = {
@@ -1149,6 +1150,34 @@ function screenPremium() {
     <div class="plans">${plans}</div>
     <p class="muted">Оплата — Telegram Stars (XTR). Цифровые товары в Telegram продаются через Stars; создание счёта делает бэкенд с ботом.</p>
     ${PREMIUM_TEST ? `<button class="ghost" onclick="window.__togglePremiumTest()">${Progress.data.premium ? '🧪 Тест: отключить Premium' : '🧪 Тест: включить Premium'}</button>` : ''}
+    <button class="ghost" onclick="window.__openReferral()">🤝 Пригласи друга — 10%</button>
+    ${navBar()}`;
+}
+
+// ---------- партнёрская программа ----------
+function screenReferral() {
+  const r = state.referral;
+  if (!r) return `${header('Пригласи друга', true)}<p class="sub">Загрузка…</p>${navBar()}`;
+  const link = Referral.link(r.refCode);
+  return `${header('Пригласи друга', true)}
+    <p class="sub">Приглашайте друзей и получайте <b>${r.percent}%</b> от каждой их оплаты звёздами.</p>
+    <div class="info-card">
+      <h3>Ваша ссылка</h3>
+      <p class="mono" style="word-break:break-all">${link}</p>
+      <div class="row-2">
+        <button class="ghost" onclick="window.__copyRef('${link}')">Копировать</button>
+        <button class="primary" onclick="window.__shareRef('${link}')">Поделиться</button>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><b>${r.invited}</b><span>приглашено</span></div>
+      <div class="stat"><b>${r.earnedStars}★</b><span>начислено</span></div>
+      <div class="stat"><b>${r.balanceStars}★</b><span>к выплате</span></div>
+    </div>
+    <h3>Выплата</h3>
+    <p class="muted">Заработанные звёзды перечисляем в TON на ваш кошелёк (после холда Telegram). Укажите адрес и запросите выплату.</p>
+    <input class="text-input" value="${r.wallet || ''}" placeholder="TON-кошелёк (EQ…)" oninput="window.__refWallet(this.value)" />
+    <button class="primary" onclick="window.__refPayout()">Запросить выплату</button>
     ${navBar()}`;
 }
 
@@ -1161,6 +1190,7 @@ function render() {
   else if (state.screen === 'progress') html = screenProgress();
   else if (state.screen === 'wallet') html = screenWallet();
   else if (state.screen === 'premium') html = screenPremium();
+  else if (state.screen === 'referral') html = screenReferral();
   else if (state.screen === 'editor') html = screenEditor();
   else if (state.screen === 'knowledge') html = screenKnowledge();
   else if (state.screen === 'knowledgeDetail') html = screenKnowledgeDetail();
@@ -1196,6 +1226,7 @@ window.__back = () => {
   const s = state.screen;
   if (s === 'knowledgeDetail') go('knowledge');
   else if (s === 'journalEditor' || s === 'stats') go('profile');
+  else if (s === 'referral') go('premium');
   else if (s === 'wallet') go('profile');
   else if (s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse' || s === 'energyBuilder') go('energy');
   else if (s === 'energyEdit') go('energyBuilder');
@@ -1713,6 +1744,26 @@ window.__togglePremiumTest = async () => {
   render();
 };
 
+// партнёрская программа
+window.__openReferral = async () => {
+  const fallback = { refCode: '', invited: 0, earnedStars: 0, balanceStars: 0, wallet: '', percent: 10 };
+  go('referral');
+  if (Referral.configured) {
+    try { state.referral = await Referral.me(); } catch (e) { state.referral = state.referral || fallback; }
+  } else {
+    state.referral = fallback;
+  }
+  if (state.screen === 'referral') render();
+};
+window.__copyRef = (link) => { try { navigator.clipboard.writeText(link); alert('Ссылка скопирована'); } catch (e) { alert(link); } };
+window.__shareRef = (link) => TG.share(link, 'Попробуй «Дыхание» — дыхательные практики и энергодыхание в Telegram');
+window.__refWallet = (v) => { state.refWallet = v; };
+window.__refPayout = async () => {
+  const w = (state.refWallet || (state.referral && state.referral.wallet) || '').trim();
+  try { state.referral = await Referral.payout(w); alert('Заявка на выплату создана'); render(); }
+  catch (e) { alert('Не удалось: ' + e.message); }
+};
+
 window.__onWalletChange = () => { if (state.screen === 'wallet') render(); };
 window.__onPremiumChange = () => { if (state.screen === 'premium') render(); };
 
@@ -1761,6 +1812,7 @@ function withTimeout(p, ms) {
     Progress.recordOpen(todayEpoch());
     applySessionToAudio();
     await STARS.syncPremium();
+    try { const sp = TG.startParam; if (sp && sp.indexOf('ref_') === 0) await Referral.claim(sp.slice(4)); } catch (e) {}
     TON.init(new URL('tonconnect-manifest.json', location.href).href);
 
     const q = new URLSearchParams(location.search);
