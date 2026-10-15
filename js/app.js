@@ -358,13 +358,13 @@ function screenSession() {
     </div>
     <div class="orb-wrap">
       <svg class="orb-svg" viewBox="0 0 300 300" aria-hidden="true">
-        <circle class="ring-track" cx="150" cy="150" r="146"></circle>
-        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="146" stroke-dasharray="917.3" stroke-dashoffset="917.3"></circle>
+        <circle class="ring-track" cx="150" cy="150" r="148"></circle>
+        <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="148" stroke-dasharray="929.9" stroke-dashoffset="929.9"></circle>
       </svg>
       <div class="cycle-ring">
-        <svg class="cycle-svg" viewBox="0 0 264 264" aria-hidden="true">
-          <circle class="cycle-track" cx="132" cy="132" r="126"></circle>
-          <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="126" stroke-dasharray="791.7" stroke-dashoffset="791.7"></circle>
+        <svg class="cycle-svg" viewBox="0 0 272 272" aria-hidden="true">
+          <circle class="cycle-track" cx="136" cy="136" r="136"></circle>
+          <circle class="cycle-arc" id="cycleArc" cx="136" cy="136" r="136" stroke-dasharray="854.5" stroke-dashoffset="854.5"></circle>
         </svg>
         <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
       </div>
@@ -1388,7 +1388,7 @@ window.__start = () => {
       const overall = 1 - t.remaining / total;
       const fill = document.getElementById('overallFill');
       if (fill) fill.style.width = (overall * 100).toFixed(1) + '%';
-      const C1 = 917.3;
+      const C1 = 929.9;
       const ro = document.getElementById('ringOverall');
       if (ro) ro.setAttribute('stroke-dashoffset', (C1 * (1 - overall)).toFixed(2));
       const cp = t.cycleProgress || 0;
@@ -1397,7 +1397,7 @@ window.__start = () => {
       if (rot) rot.style.transform = 'rotate(' + (cp * 360).toFixed(2) + 'deg)';
       const ca = document.getElementById('cycleArc');
       if (ca) {
-        ca.setAttribute('stroke-dashoffset', (791.7 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
+        ca.setAttribute('stroke-dashoffset', (854.5 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
         ca.style.stroke = col;
       }
       const dot = document.getElementById('cycleDot');

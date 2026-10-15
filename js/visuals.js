@@ -216,8 +216,8 @@ class Visuals {
 
     // свечение самого орба: нижний порог, чтобы не пропадало
     if (this.orbEl) {
-      const spread = 22 + 40 * this._bassSmooth * react + 12 * this._energy * react;
-      const alpha = 0.16 + 0.28 * Math.max(energy, L.level * react);
+      const spread = 14 + 22 * this._bassSmooth * react + 8 * this._energy * react;
+      const alpha = 0.12 + 0.20 * Math.max(energy, L.level * react);
       this.orbEl.style.boxShadow = `0 0 ${spread.toFixed(0)}px ${col(alpha)}`;
     }
   }
