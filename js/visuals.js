@@ -42,6 +42,7 @@ class Visuals {
     this._bassSmooth = 0;
     this._energy = 0; // сглаженная «энергия» для ровного свечения (не гаснет в задержке)
     this._lastSpawn = 0;
+    this._glowT = 0;
     this._reduce = false;
     try { this._reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
   }
@@ -213,8 +214,10 @@ class Visuals {
     ctx.lineWidth = 1.6 + 2.2 * this._bassSmooth * react;
     ctx.beginPath(); ctx.arc(c.x, c.y, c.r * (1.06 + 0.045 * L.bass * react), 0, Math.PI * 2); ctx.stroke();
 
-    // свечение самого орба: мягкое, «воздушное» — два широких слоя с малой непрозрачностью
-    if (this.orbEl) {
+    // свечение самого орба: мягкое и «воздушное». box-shadow перерисовывать каждый кадр
+    // дорого (подлагивает, особенно при скролле) — обновляем ~10 раз в секунду.
+    if (this.orbEl && this.t - this._glowT > 0.09) {
+      this._glowT = this.t;
       const e2 = Math.max(energy, L.level * react);
       const s1 = 34 + 30 * this._bassSmooth * react + 12 * e2;
       const s2 = 90 + 60 * this._bassSmooth * react + 24 * e2;

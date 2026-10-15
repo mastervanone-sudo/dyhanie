@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v26';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v26';
-import { ARTICLES, articleById } from './knowledge.js?v26';
-import { MusicLibrary } from './music.js?v26';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v26';
-import { BINAURAL, binauralByHz } from './binaural.js?v26';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v26';
-import { MatrixBase } from './matrix.js?v26';
-import { Audio, BREATH_VARIANTS } from './audio.js?v26';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v26';
-import { TG, loadScript } from './telegram.js?v26';
-import { BreathSession, fmtClock } from './session.js?v26';
-import { TON } from './ton.js?v26';
-import { STARS, PLANS } from './stars.js?v26';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v27';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v27';
+import { ARTICLES, articleById } from './knowledge.js?v27';
+import { MusicLibrary } from './music.js?v27';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v27';
+import { BINAURAL, binauralByHz } from './binaural.js?v27';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v27';
+import { MatrixBase } from './matrix.js?v27';
+import { Audio, BREATH_VARIANTS } from './audio.js?v27';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v27';
+import { TG, loadScript } from './telegram.js?v27';
+import { BreathSession, fmtClock } from './session.js?v27';
+import { TON } from './ton.js?v27';
+import { STARS, PLANS } from './stars.js?v27';
 
 const app = document.getElementById('app');
 const state = {
@@ -424,15 +424,6 @@ function screenSession() {
       <button class="ghost" onclick="window.__stop()">Стоп</button>
     </div>
     <button class="ghost" onclick="window.__openMusicSheet()">♪ Музыка и партитура</button>
-    <div class="s-toggles">
-      ${toggleRow('Музыка', Progress.session.musicOn, 'window.__setMusic')}
-      ${toggleRow('Дыхание', Progress.session.breathOn, 'window.__setBreath')}
-      ${toggleRow('Голос', Progress.session.voiceOn, 'window.__setVoice')}
-      ${toggleRow('Метроном', Progress.session.metronomeOn, 'window.__setMetronome')}
-      ${toggleRow('Вибрация', Progress.session.vibrateOn, 'window.__setVibrate')}
-      ${toggleRow('Частота сольфеджио', Progress.session.solfeggioOn, 'window.__setSolfeggio')}
-      ${toggleRow('Бинауральные ритмы', Progress.session.binauralOn, 'window.__setBinaural')}
-    </div>
     ${sheet}
   </div>`;
 }
