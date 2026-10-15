@@ -1,17 +1,17 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v8';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v8';
-import { ARTICLES, articleById } from './knowledge.js?v8';
-import { MusicLibrary } from './music.js?v8';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v8';
-import { BINAURAL, binauralByHz } from './binaural.js?v8';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v8';
-import { MatrixBase } from './matrix.js?v8';
-import { Audio, BREATH_VARIANTS } from './audio.js?v8';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v8';
-import { TG, loadScript } from './telegram.js?v8';
-import { BreathSession, fmtClock } from './session.js?v8';
-import { TON } from './ton.js?v8';
-import { STARS, PLANS } from './stars.js?v8';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v9';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v9';
+import { ARTICLES, articleById } from './knowledge.js?v9';
+import { MusicLibrary } from './music.js?v9';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v9';
+import { BINAURAL, binauralByHz } from './binaural.js?v9';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v9';
+import { MatrixBase } from './matrix.js?v9';
+import { Audio, BREATH_VARIANTS } from './audio.js?v9';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v9';
+import { TG, loadScript } from './telegram.js?v9';
+import { BreathSession, fmtClock } from './session.js?v9';
+import { TON } from './ton.js?v9';
+import { STARS, PLANS } from './stars.js?v9';
 
 const app = document.getElementById('app');
 const state = {
@@ -362,10 +362,10 @@ function screenSession() {
         <circle class="ring-overall" id="ringOverall" cx="150" cy="150" r="148" stroke-dasharray="929.9" stroke-dashoffset="929.9"></circle>
       </svg>
       <div class="cycle-ring">
-        <svg class="cycle-svg" viewBox="0 0 136 136" aria-hidden="true">
-          <circle class="cycle-track" cx="68" cy="68" r="68"></circle>
-          <circle class="cycle-glow" id="cycleGlow" cx="68" cy="68" r="68" stroke-dasharray="427.3" stroke-dashoffset="427.3"></circle>
-          <circle class="cycle-arc" id="cycleArc" cx="68" cy="68" r="68" stroke-dasharray="427.3" stroke-dashoffset="427.3"></circle>
+        <svg class="cycle-svg" viewBox="0 0 264 264" aria-hidden="true">
+          <circle class="cycle-track" cx="132" cy="132" r="132"></circle>
+          <circle class="cycle-glow" id="cycleGlow" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
+          <circle class="cycle-arc" id="cycleArc" cx="132" cy="132" r="132" stroke-dasharray="829.4" stroke-dashoffset="829.4"></circle>
         </svg>
         <div class="cycle-rot" id="cycleRot"><div class="cycle-dot" id="cycleDot"></div></div>
       </div>
@@ -1398,12 +1398,12 @@ window.__start = () => {
       if (rot) rot.style.transform = 'rotate(' + (cp * 360).toFixed(2) + 'deg)';
       const ca = document.getElementById('cycleArc');
       if (ca) {
-        ca.setAttribute('stroke-dashoffset', (427.3 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
+        ca.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2)); // дуга-полоска цикла
         ca.style.stroke = col;
       }
       const cg = document.getElementById('cycleGlow');
       if (cg) {
-        cg.setAttribute('stroke-dashoffset', (427.3 * (1 - cp)).toFixed(2));
+        cg.setAttribute('stroke-dashoffset', (829.4 * (1 - cp)).toFixed(2));
         cg.style.stroke = col;
       }
       const dot = document.getElementById('cycleDot');
