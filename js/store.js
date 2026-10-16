@@ -44,6 +44,7 @@ function defaults() {
     openDays: {},
     profileName: '',
     lightTheme: false,
+    lang: '',
     energyPrograms: [],
     energyPresetFirstDay: 0,
   };

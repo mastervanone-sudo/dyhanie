@@ -1,19 +1,20 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v35';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v35';
-import { ARTICLES, articleById } from './knowledge.js?v35';
-import { MusicLibrary } from './music.js?v35';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v35';
-import { BINAURAL, binauralByHz } from './binaural.js?v35';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v35';
-import { MatrixBase } from './matrix.js?v35';
-import { Audio, BREATH_VARIANTS } from './audio.js?v35';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v35';
-import { TG, loadScript } from './telegram.js?v35';
-import { BreathSession, fmtClock } from './session.js?v35';
-import { TON } from './ton.js?v35';
-import { STARS, PLANS } from './stars.js?v35';
-import { Referral } from './referral.js?v35';
-import { APP_VERSION } from './config.js?v35';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v36';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v36';
+import { ARTICLES, articleById } from './knowledge.js?v36';
+import { MusicLibrary } from './music.js?v36';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v36';
+import { BINAURAL, binauralByHz } from './binaural.js?v36';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v36';
+import { MatrixBase } from './matrix.js?v36';
+import { Audio, BREATH_VARIANTS } from './audio.js?v36';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v36';
+import { TG, loadScript } from './telegram.js?v36';
+import { BreathSession, fmtClock } from './session.js?v36';
+import { TON } from './ton.js?v36';
+import { STARS, PLANS } from './stars.js?v36';
+import { Referral } from './referral.js?v36';
+import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v36';
+import { APP_VERSION } from './config.js?v36';
 
 const app = document.getElementById('app');
 const state = {
@@ -686,6 +687,11 @@ function screenProfile() {
       <div class="stat wide"><b>${fav}</b><span>любимый ритм</span></div>
     </div>
     ${toggleRow('Светлая тема', Progress.data.lightTheme, 'window.__setLightTheme')}
+    <button class="hub-card" onclick="window.__openLanguage()">
+      <div class="hub-ico">🌐</div>
+      <div><div class="hub-t">Язык</div>
+      <div class="hub-d">${(LANGS.find((l) => l.id === (Progress.data.lang || 'ru')) || LANGS[0]).label}</div></div>
+    </button>
     <button class="hub-card" onclick="window.__go('premium')">
       <div class="hub-ico">👑</div>
       <div><div class="hub-t">Premium</div>
@@ -1140,6 +1146,19 @@ function screenDiary() {
     ${navBar()}`;
 }
 
+function screenLanguage() {
+  const cur = Progress.data.lang;
+  const list = LANGS.map((l) => `<button class="list-row pick ${cur === l.id ? 'sel' : ''}" onclick="window.__pickLang('${l.id}')">
+      <span class="list-col"><span class="list-t">${l.flag} ${l.label}</span></span>
+      ${cur === l.id ? '<span class="tag">✓</span>' : ''}
+    </button>`).join('');
+  const first = state.langFirst;
+  return `${first ? header(translateStr('Выберите язык')) : header(translateStr('Язык'), true)}
+    <p class="sub">${translateStr('Выберите язык')} / Choose a language</p>
+    <div class="list">${list}</div>
+    ${first ? '' : navBar()}`;
+}
+
 function screenCommunity() {
   return `${header('Сообщество')}
     <div class="info-card">
@@ -1221,6 +1240,7 @@ function render() {
   else if (state.screen === 'progress') html = screenProgress();
   else if (state.screen === 'diary') html = screenDiary();
   else if (state.screen === 'community') html = screenCommunity();
+  else if (state.screen === 'language') html = screenLanguage();
   else if (state.screen === 'wallet') html = screenWallet();
   else if (state.screen === 'premium') html = screenPremium();
   else if (state.screen === 'referral') html = screenReferral();
@@ -1249,6 +1269,7 @@ function render() {
     html += `<button class="resume-practice" onclick="window.__resumeSession()">▶ Вернуться к практике</button>`;
   }
   app.innerHTML = html;
+  translateDOM(app);
   if (state.screen === 'session' && state.session) bindVisuals();
 }
 
@@ -1337,6 +1358,18 @@ window.__openEnergy = () => go('energy');
 window.__openMatrix = () => go('matrix');
 window.__openDiary = () => go('diary');
 window.__wip = () => alert('Раздел в разработке — ждите обновлений.');
+window.__openLanguage = () => go('language', { langFirst: false });
+window.__pickLang = async (id) => {
+  Progress.data.lang = id;
+  setLang(id);
+  await Progress.save();
+  if (state.langFirst) {
+    state.langFirst = false;
+    go(Progress.data.onboardingSeen ? 'home' : 'onboarding');
+  } else {
+    go('profile');
+  }
+};
 window.__energyAck = (v) => { state.energyAck = v; render(); };
 window.__energyAbout = () => go('energyAbout');
 window.__energyPreset = () => go('energyPreset');
@@ -1490,7 +1523,7 @@ window.__start = () => {
       const orb = document.getElementById('orb');
       if (!orb) return;
       orb.style.transform = `scale(${t.scale})`;
-      document.getElementById('phase').textContent = t.paused ? 'Пауза' : t.phase.label;
+      document.getElementById('phase').textContent = translateStr(t.paused ? 'Пауза' : t.phase.label);
       document.getElementById('phaseLeft').textContent = t.phaseLeft;
       document.getElementById('elapsed').textContent = fmtClock(t.elapsed);
       document.getElementById('cycles').textContent = t.cycles;
@@ -1546,7 +1579,7 @@ window.__start = () => {
         mark.style.opacity = Math.max(0, Math.min(1, o)).toFixed(2);
       }
       const btn = document.getElementById('pauseBtn');
-      if (btn) btn.textContent = t.paused ? 'Продолжить' : 'Пауза';
+      if (btn) btn.textContent = translateStr(t.paused ? 'Продолжить' : 'Пауза');
       const sec = Math.floor(t.elapsed);
       if (sec !== lastSec) {
         lastSec = sec;
@@ -1581,7 +1614,7 @@ window.__pause = () => {
   const paused = state.session.toggle();
   if (paused) Audio.pauseSession(); else Audio.resumeSession();
   const btn = document.getElementById('pauseBtn');
-  if (btn) btn.textContent = paused ? 'Продолжить' : 'Пауза';
+  if (btn) btn.textContent = translateStr(paused ? 'Продолжить' : 'Пауза');
 };
 window.__stop = () => {
   if (state.session) {
@@ -1848,16 +1881,20 @@ function withTimeout(p, ms) {
     await withTimeout(loadScript('https://telegram.org/js/telegram-web-app.js'), 3000);
     TG.ready();
     await Progress.load();
+    setLang(Progress.data.lang || 'ru');
     applyTheme();
     Progress.recordOpen(todayEpoch());
     applySessionToAudio();
 
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
-    if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
+    if (!Progress.data.lang) {
+      state.langFirst = true;
+      go('language');
+    } else if (s === 'home' || s === 'progress' || s === 'wallet' || s === 'premium' || s === 'knowledge'
         || s === 'music' || s === 'solfeggio' || s === 'playlist' || s === 'binaural' || s === 'profile' || s === 'stats'
         || s === 'energy' || s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse'
-        || s === 'energyBuilder' || s === 'matrix') {
+        || s === 'energyBuilder' || s === 'matrix' || s === 'community' || s === 'diary') {
       render();
       go(s);
     } else if (s === 'session') {
