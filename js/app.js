@@ -1,19 +1,19 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v34';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v34';
-import { ARTICLES, articleById } from './knowledge.js?v34';
-import { MusicLibrary } from './music.js?v34';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v34';
-import { BINAURAL, binauralByHz } from './binaural.js?v34';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v34';
-import { MatrixBase } from './matrix.js?v34';
-import { Audio, BREATH_VARIANTS } from './audio.js?v34';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v34';
-import { TG, loadScript } from './telegram.js?v34';
-import { BreathSession, fmtClock } from './session.js?v34';
-import { TON } from './ton.js?v34';
-import { STARS, PLANS } from './stars.js?v34';
-import { Referral } from './referral.js?v34';
-import { APP_VERSION } from './config.js?v34';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v35';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v35';
+import { ARTICLES, articleById } from './knowledge.js?v35';
+import { MusicLibrary } from './music.js?v35';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v35';
+import { BINAURAL, binauralByHz } from './binaural.js?v35';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v35';
+import { MatrixBase } from './matrix.js?v35';
+import { Audio, BREATH_VARIANTS } from './audio.js?v35';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v35';
+import { TG, loadScript } from './telegram.js?v35';
+import { BreathSession, fmtClock } from './session.js?v35';
+import { TON } from './ton.js?v35';
+import { STARS, PLANS } from './stars.js?v35';
+import { Referral } from './referral.js?v35';
+import { APP_VERSION } from './config.js?v35';
 
 const app = document.getElementById('app');
 const state = {
@@ -1844,18 +1844,13 @@ function withTimeout(p, ms) {
 }
 (async function boot() {
   try {
-    await Promise.all([
-      withTimeout(loadScript('https://telegram.org/js/telegram-web-app.js'), 3000),
-      withTimeout(loadScript('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js'), 3000),
-    ]);
+    // Ждём только то, что реально нужно для первого кадра (скрипт Telegram).
+    await withTimeout(loadScript('https://telegram.org/js/telegram-web-app.js'), 3000);
     TG.ready();
     await Progress.load();
     applyTheme();
     Progress.recordOpen(todayEpoch());
     applySessionToAudio();
-    await STARS.syncPremium();
-    try { const sp = TG.startParam; if (sp && sp.indexOf('ref_') === 0) await Referral.claim(sp.slice(4)); } catch (e) {}
-    TON.init(new URL('tonconnect-manifest.json', location.href).href);
 
     const q = new URLSearchParams(location.search);
     const s = q.get('s');
@@ -1875,6 +1870,14 @@ function withTimeout(p, ms) {
     } else {
       render();
     }
+
+    // ---- Дальше — в фоне, чтобы НЕ тормозить запуск ----
+    // (сервер на free-тарифе «просыпается» до минуты; UI уже показан)
+    loadScript('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js').then(() => {
+      try { TON.init(new URL('tonconnect-manifest.json', location.href).href); } catch (e) {}
+    });
+    STARS.syncPremium().catch(() => {});
+    try { const sp = TG.startParam; if (sp && sp.indexOf('ref_') === 0) Referral.claim(sp.slice(4)).catch(() => {}); } catch (e) {}
   } catch (e) {
     console.error('BOOT FAIL', e);
     const el = document.getElementById('app');
