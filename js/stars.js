@@ -1,9 +1,9 @@
 // Telegram Stars — подписка Premium. Оплата цифровых товаров в Telegram идёт через Stars (XTR).
 // Создание счёта и подтверждение — на сервере (Bot API createInvoiceLink + webhook).
 // Пока бэкенда нет, модуль работает как заготовка и честно сообщает об этом.
-import { TG } from './telegram.js?v36';
-import { Progress } from './store.js?v36';
-import { API_BASE } from './config.js?v36';
+import { TG } from './telegram.js?v37';
+import { Progress } from './store.js?v37';
+import { API_BASE } from './config.js?v37';
 
 export { API_BASE };
 

@@ -1,20 +1,20 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v36';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v36';
-import { ARTICLES, articleById } from './knowledge.js?v36';
-import { MusicLibrary } from './music.js?v36';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v36';
-import { BINAURAL, binauralByHz } from './binaural.js?v36';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v36';
-import { MatrixBase } from './matrix.js?v36';
-import { Audio, BREATH_VARIANTS } from './audio.js?v36';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v36';
-import { TG, loadScript } from './telegram.js?v36';
-import { BreathSession, fmtClock } from './session.js?v36';
-import { TON } from './ton.js?v36';
-import { STARS, PLANS } from './stars.js?v36';
-import { Referral } from './referral.js?v36';
-import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v36';
-import { APP_VERSION } from './config.js?v36';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v37';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v37';
+import { ARTICLES, articleById } from './knowledge.js?v37';
+import { MusicLibrary } from './music.js?v37';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v37';
+import { BINAURAL, binauralByHz } from './binaural.js?v37';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v37';
+import { MatrixBase } from './matrix.js?v37';
+import { Audio, BREATH_VARIANTS } from './audio.js?v37';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v37';
+import { TG, loadScript } from './telegram.js?v37';
+import { BreathSession, fmtClock } from './session.js?v37';
+import { TON } from './ton.js?v37';
+import { STARS, PLANS } from './stars.js?v37';
+import { Referral } from './referral.js?v37';
+import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v37';
+import { APP_VERSION } from './config.js?v37';
 
 const app = document.getElementById('app');
 const state = {
@@ -1009,9 +1009,9 @@ function epTick() {
   const color = ENERGY_MODES[cur.stage.mode].color;
   const orb = document.getElementById('epOrb');
   if (orb) orb.style.background = color;
-  const st = document.getElementById('epStage'); if (st) st.textContent = cur.stage.title;
+  const st = document.getElementById('epStage'); if (st) st.textContent = translateStr(cur.stage.title);
   const sl = document.getElementById('epStageLeft'); if (sl) sl.textContent = cur.stage.seconds - (state.epElapsed - cur.acc);
-  const gd = document.getElementById('epGuide'); if (gd) gd.textContent = cur.stage.guidance;
+  const gd = document.getElementById('epGuide'); if (gd) gd.textContent = translateStr(cur.stage.guidance);
   const rm = document.getElementById('epRemain'); if (rm) rm.textContent = fmtClock(program.totalSeconds - state.epElapsed);
   const fl = document.getElementById('epFill'); if (fl) fl.style.width = (state.epElapsed / program.totalSeconds * 100).toFixed(1) + '%';
   program.stages.forEach((s, i) => {
@@ -1357,7 +1357,7 @@ window.__deleteCustom = async (id) => {
 window.__openEnergy = () => go('energy');
 window.__openMatrix = () => go('matrix');
 window.__openDiary = () => go('diary');
-window.__wip = () => alert('Раздел в разработке — ждите обновлений.');
+window.__wip = () => alert(translateStr('Раздел в разработке — ждите обновлений.'));
 window.__openLanguage = () => go('language', { langFirst: false });
 window.__pickLang = async (id) => {
   Progress.data.lang = id;
@@ -1497,7 +1497,7 @@ window.__start = () => {
   if (state.session) { go('session'); return; }
   // Дневной лимит 30 минут для не-Premium
   if (!Progress.data.premium && todayMinutes() >= 30) {
-    alert('Дневной лимит 30 минут исчерпан.\n\nС Premium — практики без ограничений.');
+    alert(translateStr('Дневной лимит 30 минут исчерпан.') + '\n\n' + translateStr('С Premium — практики без ограничений.'));
     go('premium');
     return;
   }
@@ -1830,12 +1830,12 @@ window.__openReferral = async () => {
   }
   if (state.screen === 'referral') render();
 };
-window.__copyRef = (link) => { try { navigator.clipboard.writeText(link); alert('Ссылка скопирована'); } catch (e) { alert(link); } };
+window.__copyRef = (link) => { try { navigator.clipboard.writeText(link); alert(translateStr('Ссылка скопирована')); } catch (e) { alert(link); } };
 window.__shareRef = (link) => TG.share(link, 'Попробуй «Дыхание» — дыхательные практики и энергодыхание в Telegram');
 window.__refWallet = (v) => { state.refWallet = v; };
 window.__refPayout = async () => {
   const w = (state.refWallet || (state.referral && state.referral.wallet) || '').trim();
-  try { state.referral = await Referral.payout(w); alert('Заявка на выплату создана'); render(); }
+  try { state.referral = await Referral.payout(w); alert(translateStr('Заявка на выплату создана')); render(); }
   catch (e) { alert('Не удалось: ' + e.message); }
 };
 
