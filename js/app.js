@@ -1,20 +1,20 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v37';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v37';
-import { ARTICLES, articleById } from './knowledge.js?v37';
-import { MusicLibrary } from './music.js?v37';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v37';
-import { BINAURAL, binauralByHz } from './binaural.js?v37';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v37';
-import { MatrixBase } from './matrix.js?v37';
-import { Audio, BREATH_VARIANTS } from './audio.js?v37';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v37';
-import { TG, loadScript } from './telegram.js?v37';
-import { BreathSession, fmtClock } from './session.js?v37';
-import { TON } from './ton.js?v37';
-import { STARS, PLANS } from './stars.js?v37';
-import { Referral } from './referral.js?v37';
-import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v37';
-import { APP_VERSION } from './config.js?v37';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v38';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v38';
+import { ARTICLES, articleById } from './knowledge.js?v38';
+import { MusicLibrary } from './music.js?v38';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v38';
+import { BINAURAL, binauralByHz } from './binaural.js?v38';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v38';
+import { MatrixBase } from './matrix.js?v38';
+import { Audio, BREATH_VARIANTS } from './audio.js?v38';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v38';
+import { TG, loadScript } from './telegram.js?v38';
+import { BreathSession, fmtClock } from './session.js?v38';
+import { TON } from './ton.js?v38';
+import { STARS, PLANS } from './stars.js?v38';
+import { Referral } from './referral.js?v38';
+import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v38';
+import { APP_VERSION } from './config.js?v38';
 
 const app = document.getElementById('app');
 const state = {
