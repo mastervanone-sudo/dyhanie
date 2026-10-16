@@ -1,19 +1,19 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v33';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v33';
-import { ARTICLES, articleById } from './knowledge.js?v33';
-import { MusicLibrary } from './music.js?v33';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v33';
-import { BINAURAL, binauralByHz } from './binaural.js?v33';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v33';
-import { MatrixBase } from './matrix.js?v33';
-import { Audio, BREATH_VARIANTS } from './audio.js?v33';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v33';
-import { TG, loadScript } from './telegram.js?v33';
-import { BreathSession, fmtClock } from './session.js?v33';
-import { TON } from './ton.js?v33';
-import { STARS, PLANS } from './stars.js?v33';
-import { Referral } from './referral.js?v33';
-import { APP_VERSION } from './config.js?v33';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v34';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v34';
+import { ARTICLES, articleById } from './knowledge.js?v34';
+import { MusicLibrary } from './music.js?v34';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v34';
+import { BINAURAL, binauralByHz } from './binaural.js?v34';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v34';
+import { MatrixBase } from './matrix.js?v34';
+import { Audio, BREATH_VARIANTS } from './audio.js?v34';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v34';
+import { TG, loadScript } from './telegram.js?v34';
+import { BreathSession, fmtClock } from './session.js?v34';
+import { TON } from './ton.js?v34';
+import { STARS, PLANS } from './stars.js?v34';
+import { Referral } from './referral.js?v34';
+import { APP_VERSION } from './config.js?v34';
 
 const app = document.getElementById('app');
 const state = {
@@ -27,7 +27,7 @@ const state = {
 };
 
 // Тестовый переключатель Premium (без оплаты). ВЫКЛЮЧИ перед релизом: false.
-const PREMIUM_TEST = true;
+const PREMIUM_TEST = false;
 
 const go = (screen, opts = {}) => {
   state.screen = screen;
@@ -89,6 +89,7 @@ function navBar() {
   return `<nav class="tabbar">
     ${item('home', 'Практики', '🫁')}
     ${item('progress', 'Прогресс', '⭐')}
+    ${item('community', 'Сообщество', '👥')}
     ${item('profile', 'Профиль', '👤')}
     ${item('premium', 'Premium', '👑')}
   </nav>`;
@@ -154,6 +155,7 @@ function screenHome() {
     <div class="cards">${patternCards}</div>
     <h3>Свои ритмы</h3>
     <div class="cards">${customCards}</div>
+    <button class="ghost" onclick="window.__newCustom()">+ Создать свой ритм</button>
     <h3>Программы</h3>
     <button class="hub-card" onclick="window.__openEnergy()">
       <div class="hub-ico">🔷</div>
@@ -161,13 +163,12 @@ function screenHome() {
       <div class="hub-d">Связное частое и медленное дыхание под музыку и подсказки — отдельный плеер по этапам.</div>
       <div class="hub-m" style="color:var(--gold)">Есть противопоказания</div></div>
     </button>
-    <button class="hub-card" onclick="window.__openMatrix()">
+    <button class="hub-card dim" onclick="window.__wip()">
       <div class="hub-ico">🌀</div>
       <div><div class="hub-t">Матрица Гаряева</div>
       <div class="hub-d">Метод волновой генетики: звуковые программы и описание методики</div>
-      <div class="hub-m">Ознакомительный раздел</div></div>
+      <div class="hub-m">В разработке</div></div>
     </button>
-    <button class="ghost" onclick="window.__newCustom()">+ Создать свой ритм</button>
     ${navBar()}`;
 }
 
@@ -637,6 +638,11 @@ function buildDayMap() {
   return days;
 }
 
+function todayMinutes() {
+  const t = todayEpoch();
+  return Math.round(Progress.sessionsLog.filter((s) => s.dayEpochDay === t).reduce((a, s) => a + s.seconds, 0) / 60);
+}
+
 function favoritePattern() {
   const counts = {};
   for (const s of Progress.sessionsLog) counts[s.patternName] = (counts[s.patternName] || 0) + 1;
@@ -684,11 +690,6 @@ function screenProfile() {
       <div class="hub-ico">👑</div>
       <div><div class="hub-t">Premium</div>
       <div class="hub-d">${premium ? 'Подписка активна' : 'Свои треки, плейлисты и курс без ограничений'}</div></div>
-    </button>
-    <button class="hub-card" onclick="window.__go('wallet')">
-      <div class="hub-ico">💎</div>
-      <div><div class="hub-t">Кошелёк TON</div>
-      <div class="hub-d">NFT-достижения и оплата в TON</div></div>
     </button>
     <h3>Достижения</h3>
     <div class="ach-grid">${ach}</div>
@@ -1073,11 +1074,8 @@ function startAudioPoll() {
 function stopAudioPoll() { if (audioPoll) { clearInterval(audioPoll); audioPoll = null; } }
 
 // ---------- прогресс ----------
-function screenProgress() {
-  const d = Progress.data;
-  const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
-  const days = buildDayMap();
-  const journalRows = Progress.journal.length
+function journalRowsHtml() {
+  return Progress.journal.length
     ? Progress.journal.map((e) => {
         const ratings = [];
         if (e.calm) ratings.push(`Спокойствие ${e.calm}`);
@@ -1096,13 +1094,20 @@ function screenProgress() {
           <button class="mini" onclick="window.__openJournal('${e.id}')">Открыть</button>
         </div>`;
       }).join('')
-    : '<p class="muted">Записывайте, как вы себя чувствуете и какие приходят мысли после практики.</p>';
+    : '<p class="muted">Пока пусто. Добавьте первую запись — и здесь появятся ваши заметки.</p>';
+}
+
+function screenProgress() {
+  const d = Progress.data;
+  const month = state.profileMonth || { y: new Date().getFullYear(), m: new Date().getMonth() };
+  const days = buildDayMap();
+  const used = todayMinutes();
+  const limit = Progress.data.premium ? '∞ (Premium)' : '30';
   return `${header('Прогресс')}
     <div class="level-card">
       <div class="level-num">Уровень ${Progress.level}</div>
       <div class="bar"><div class="bar-fill" style="width:${Progress.xpIntoLevel}%"></div></div>
       <div class="muted">${Progress.xpIntoLevel} / 100 XP · до следующего ${Progress.xpToNext} XP</div>
-      <div class="muted">Сегодня можно набрать ещё ${Progress.dayXpLeft} XP (дневной лимит)</div>
     </div>
     <div class="stats-row">
       <div class="stat"><b>${d.sessions}</b><span>практик</span></div>
@@ -1111,12 +1116,36 @@ function screenProgress() {
       <div class="stat"><b>${Math.round(d.totalMinutes)}</b><span>минут</span></div>
     </div>
     <button class="ghost" onclick="window.__share()">Поделиться результатом</button>
-    <h3>Дневник состояний</h3>
-    <button class="ghost" onclick="window.__addJournal()">＋ Запись о состоянии</button>
-    <div class="j-list">${journalRows}</div>
+    <button class="hub-card" onclick="window.__openDiary()">
+      <div class="hub-ico">📔</div>
+      <div><div class="hub-t">Дневник состояний</div>
+      <div class="hub-d">Записывайте самочувствие и инсайты после практик</div>
+      <div class="hub-m">${Progress.journal.length} записей</div></div>
+    </button>
     <h3>Календарь активности</h3>
     ${activityCalendarHtml(month, days)}
     ${state.selectedDay ? dayDetailsHtml(state.selectedDay, days) : ''}
+    <p class="muted">Сегодня практики: ${used} мин из ${limit}</p>
+    ${navBar()}`;
+}
+
+function screenDiary() {
+  return `${header('Дневник состояний', true)}
+    <div class="info-card">
+      <h3>Зачем записывать</h3>
+      <p>Отмечайте самочувствие и мысли после практик — так виден прогресс, легче замечать, что помогает, и удерживается мотивация.</p>
+    </div>
+    <button class="primary" onclick="window.__addJournal()">＋ Запись о состоянии</button>
+    <div class="j-list">${journalRowsHtml()}</div>
+    ${navBar()}`;
+}
+
+function screenCommunity() {
+  return `${header('Сообщество')}
+    <div class="info-card">
+      <h3>В разработке</h3>
+      <p>Раздел «Сообщество» скоро появится — ждите обновлений!</p>
+    </div>
     ${navBar()}`;
 }
 
@@ -1190,6 +1219,8 @@ function render() {
   else if (state.screen === 'detail') html = screenDetail();
   else if (state.screen === 'session') html = screenSession();
   else if (state.screen === 'progress') html = screenProgress();
+  else if (state.screen === 'diary') html = screenDiary();
+  else if (state.screen === 'community') html = screenCommunity();
   else if (state.screen === 'wallet') html = screenWallet();
   else if (state.screen === 'premium') html = screenPremium();
   else if (state.screen === 'referral') html = screenReferral();
@@ -1229,6 +1260,7 @@ window.__back = () => {
   if (s === 'knowledgeDetail') go('knowledge');
   else if (s === 'journalEditor' || s === 'stats') go('profile');
   else if (s === 'referral') go('premium');
+  else if (s === 'diary') go('progress');
   else if (s === 'wallet') go('profile');
   else if (s === 'energyAbout' || s === 'energyPreset' || s === 'energyCourse' || s === 'energyBuilder') go('energy');
   else if (s === 'energyEdit') go('energyBuilder');
@@ -1303,6 +1335,8 @@ window.__deleteCustom = async (id) => {
 // ---------- энергодыхание / матрица ----------
 window.__openEnergy = () => go('energy');
 window.__openMatrix = () => go('matrix');
+window.__openDiary = () => go('diary');
+window.__wip = () => alert('Раздел в разработке — ждите обновлений.');
 window.__energyAck = (v) => { state.energyAck = v; render(); };
 window.__energyAbout = () => go('energyAbout');
 window.__energyPreset = () => go('energyPreset');
@@ -1428,6 +1462,12 @@ window.__audioRestart = () => { if (extEl) { extEl.currentTime = 0; extEl.play()
 window.__start = () => {
   // Если практика уже идёт — не плодим вторую, а возвращаемся к текущей.
   if (state.session) { go('session'); return; }
+  // Дневной лимит 30 минут для не-Premium
+  if (!Progress.data.premium && todayMinutes() >= 30) {
+    alert('Дневной лимит 30 минут исчерпан.\n\nС Premium — практики без ограничений.');
+    go('premium');
+    return;
+  }
   Audio.unlock();
   applySessionToAudio();
   state.phaseGlow = PHASE_GLOW.INHALE;
