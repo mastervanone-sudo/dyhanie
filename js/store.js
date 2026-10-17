@@ -12,6 +12,13 @@ function dayBefore(d) {
   return t.toISOString().slice(0, 10);
 }
 
+let _jidSeq = 0;
+// Уникальный id: Date.now() может совпасть у двух быстрых записей, добавляем счётчик
+function nextJournalId() {
+  _jidSeq = (_jidSeq + 1) % 1000;
+  return Date.now() * 1000 + _jidSeq;
+}
+
 export const ACHIEVEMENTS = [
   { id: 'first_session', title: 'Первый вдох', desc: 'Провести первую практику', icon: '🌱' },
   { id: 'streak_3', title: 'Три дня подряд', desc: 'Серия 3 дня', icon: '🔥' },
@@ -47,6 +54,7 @@ function defaults() {
     lang: '',
     energyPrograms: [],
     energyPresetFirstDay: 0,
+    savedAt: 0,
   };
 }
 
@@ -88,11 +96,11 @@ class ProgressStore {
       const w = this._tg;
       if (w && w.CloudStorage && this._inTelegram()) {
         try {
-          w.CloudStorage.getItem(key, (err, val) => resolve(err || !val ? localStorage.getItem(key) : val));
+          w.CloudStorage.getItem(key, (err, val) => resolve(err || !val ? null : val));
           return;
         } catch (e) {}
       }
-      resolve(localStorage.getItem(key));
+      resolve(null);
     });
   }
   _cloudSet(key, val) {
@@ -104,16 +112,44 @@ class ProgressStore {
           return;
         } catch (e) {}
       }
-      localStorage.setItem(key, val);
-      resolve(true);
+      resolve(false);
     });
   }
 
-  async load() {
-    const raw = await this._cloudGet(KEY);
-    if (raw) {
-      try { this.data = Object.assign(defaults(), JSON.parse(raw)); } catch (e) { this.data = defaults(); }
+  // CloudStorage выдаёт максимум 4096 символов на ключ, поэтому большие данные
+  // режем на чанки: KEY:#n — число кусков, KEY:i — каждый кусок.
+  async _cloudGetBig(key) {
+    const n = parseInt(await this._cloudGet(key + ':#'), 10);
+    if (!n || n < 1) return null;
+    let out = '';
+    for (let i = 0; i < n; i++) {
+      const part = await this._cloudGet(key + ':' + i);
+      if (part == null) return null;
+      out += part;
     }
+    return out;
+  }
+  async _cloudSetBig(key, val) {
+    const chunks = [];
+    for (let i = 0; i < val.length; i += 4000) chunks.push(val.slice(i, i + 4000));
+    for (let i = 0; i < chunks.length; i++) await this._cloudSet(key + ':' + i, chunks[i]);
+    await this._cloudSet(key + ':#', String(chunks.length));
+  }
+
+  async load() {
+    let rawCloud = await this._cloudGetBig(KEY);
+    if (!rawCloud) rawCloud = await this._cloudGet(KEY);
+    const rawLocal = localStorage.getItem(KEY);
+    let cloud = null, local = null;
+    try { cloud = rawCloud ? JSON.parse(rawCloud) : null; } catch (e) {}
+    try { local = rawLocal ? JSON.parse(rawLocal) : null; } catch (e) {}
+    if (cloud && typeof cloud !== 'object') cloud = null;
+    if (local && typeof local !== 'object') local = null;
+    // Берём более свежую копию: облако могло не догнать (лимит записи)
+    let chosen = null;
+    if (cloud && local) chosen = ((local.savedAt || 0) > (cloud.savedAt || 0)) ? local : cloud;
+    else chosen = cloud || local;
+    if (chosen) this.data = Object.assign(defaults(), chosen);
     this.data.session = Object.assign(defaultSession(), this.data.session || {});
     this.data.sessionsLog = this.data.sessionsLog || [];
     this.data.journal = this.data.journal || [];
@@ -123,7 +159,11 @@ class ProgressStore {
   }
 
   async save() {
-    await this._cloudSet(KEY, JSON.stringify(this.data));
+    this.data.savedAt = Date.now();
+    const s = JSON.stringify(this.data);
+    // localStorage — основная страховка, CloudStorage — для переноса между устройствами
+    try { localStorage.setItem(KEY, s); } catch (e) {}
+    await this._cloudSetBig(KEY, s);
   }
 
   _rollDay() {
@@ -203,12 +243,13 @@ class ProgressStore {
   // ---------- дневник состояний ----------
   get journal() { return this.data.journal || []; }
   addJournal(entry) {
-    entry.id = entry.id || Date.now();
+    entry.id = entry.id || nextJournalId();
     this.data.journal.unshift(entry);
     return entry;
   }
   getJournal(id) { return this.journal.find((j) => String(j.id) === String(id)) || null; }
   updateJournal(entry) {
+    if (!entry.id) entry.id = nextJournalId();
     const i = this.journal.findIndex((j) => String(j.id) === String(entry.id));
     if (i >= 0) this.data.journal[i] = entry; else this.data.journal.unshift(entry);
     return entry;

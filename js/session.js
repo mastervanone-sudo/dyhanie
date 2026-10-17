@@ -2,7 +2,7 @@
 // Время считается по часам (performance.now), а не по кадрам — так сессия
 // не «замирает», если requestAnimationFrame троттлится. Кадры только для анимации,
 // плюс сторожевой интервал для надёжности.
-import { TG } from './telegram.js?v38';
+import { TG } from './telegram.js?v39';
 
 export const PHASES = {
   INHALE: { key: 'INHALE', label: 'Вдох' },
