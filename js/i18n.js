@@ -610,6 +610,7 @@ const EN = {
     'Congratulations on deciding to join the “Breathing and the Brain” program. We are sure this course will be a real discovery for you: it will help restore energy, improve sleep, tune your attention and give you a new tool to manage your state.',
   'Задайте название и хотя бы одну фазу больше нуля.': 'Set a name and at least one phase above zero.',
   'Удалить этот ритм?': 'Delete this rhythm?',
+  'Удалить запись?': 'Delete this entry?',
   'Дыши спокойно, расслабься.': 'Breathe calmly, relax.',
   'Дыши связно и часто, без пауз.': 'Breathe connected and fast, without pauses.',
   'Дневник состояний': 'State diary',
