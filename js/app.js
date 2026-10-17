@@ -1,20 +1,20 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v41';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v41';
-import { ARTICLES, articleById } from './knowledge.js?v41';
-import { MusicLibrary } from './music.js?v41';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v41';
-import { BINAURAL, binauralByHz } from './binaural.js?v41';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v41';
-import { MatrixBase } from './matrix.js?v41';
-import { Audio, BREATH_VARIANTS } from './audio.js?v41';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v41';
-import { TG, loadScript } from './telegram.js?v41';
-import { BreathSession, fmtClock } from './session.js?v41';
-import { TON } from './ton.js?v41';
-import { STARS, PLANS } from './stars.js?v41';
-import { Referral } from './referral.js?v41';
-import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v41';
-import { APP_VERSION } from './config.js?v41';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v42';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v42';
+import { ARTICLES, articleById } from './knowledge.js?v42';
+import { MusicLibrary } from './music.js?v42';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v42';
+import { BINAURAL, binauralByHz } from './binaural.js?v42';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v42';
+import { MatrixBase } from './matrix.js?v42';
+import { Audio, BREATH_VARIANTS } from './audio.js?v42';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v42';
+import { TG, loadScript } from './telegram.js?v42';
+import { BreathSession, fmtClock } from './session.js?v42';
+import { TON } from './ton.js?v42';
+import { STARS, PLANS } from './stars.js?v42';
+import { Referral } from './referral.js?v42';
+import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v42';
+import { APP_VERSION } from './config.js?v42';
 
 const app = document.getElementById('app');
 const state = {
@@ -76,6 +76,16 @@ function applySessionToAudio() {
 }
 
 // ---------- общие части ----------
+// Экранирование пользовательских данных перед вставкой в HTML (защита от XSS)
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function header(title, back) {
   return `<header class="hdr">
     ${back ? `<button class="back" onclick="window.__back()">‹</button>` : ''}
@@ -141,7 +151,7 @@ function screenHome() {
       <h1>Дыхательные практики</h1>
       <button class="avatar-btn" style="margin-left:auto" onclick="window.__go('profile')">👤</button>
     </header>
-    <p class="sub">Привет, ${TG.name()}. Выберите ритм под своё состояние.</p>
+    <p class="sub">Привет, ${esc(TG.name())}. Выберите ритм под своё состояние.</p>
     <div class="stats-row">
       <div class="stat"><b>${Progress.level}</b><span>уровень</span></div>
       <div class="stat"><b>${Progress.data.streak}</b><span>серия дней</span></div>
@@ -187,7 +197,7 @@ function patternCard(p) {
       ${goalChip(p.goal)}
       <span class="bpm">${breathsPerMinute(p)} дых/мин</span>
     </div>
-    <div class="card-name">${p.name}</div>
+    <div class="card-name">${esc(p.name)}</div>
     <div class="card-desc">${p.shortDescription}</div>
     <div class="p-score">${segs}</div>
     <div class="p-legend">${legend}</div>
@@ -244,7 +254,7 @@ function screenEditor() {
   };
   return `${header(isNew ? 'Свой ритм' : 'Изменить ритм', true)}
     <label class="field-label">Название</label>
-    <input class="text-input" id="edName" maxlength="40" value="${e.name}" oninput="window.__setEditorName(this.value)" />
+    <input class="text-input" id="edName" maxlength="40" value="${esc(e.name)}" oninput="window.__setEditorName(this.value)" />
     <label class="field-label">Цель</label>
     <div class="row-3">${goalBtn('RELAX')}${goalBtn('FOCUS')}${goalBtn('ENERGY')}</div>
     ${phaseSlider('Вдох', 'inhaleSec', e.inhaleSec)}
@@ -394,7 +404,7 @@ function screenSession() {
     <canvas id="cosmos" class="cosmos"></canvas>
     <div class="s-top">
       <button class="back light" onclick="window.__stop()">‹</button>
-      <span class="s-title" id="sName">${p.name}</span>
+      <span class="s-title" id="sName">${esc(p.name)}</span>
       <span class="s-remain" id="sRemain">${fmtClock(state.minutes * 60)}</span>
     </div>
     <div class="orb-wrap">
@@ -615,7 +625,7 @@ function profileName() {
 }
 function avatarInitial() {
   const n = profileName().trim();
-  return n ? n[0].toUpperCase() : 'Д';
+  return n ? esc(n[0].toUpperCase()) : 'Д';
 }
 function avatarInner() {
   const u = TG.user;
@@ -671,7 +681,7 @@ function screenProfile() {
         <button class="avatar" onclick="window.__go('profile')">${avatarInner()}</button>
       </div>
       <div class="prof-id">
-        <div class="prof-name">${profileName()}</div>
+        <div class="prof-name">${esc(profileName())}</div>
         <div class="prof-rank">${rank} · уровень ${level}</div>
         <div class="muted">${level >= 100 ? 'Максимальный уровень' : `до следующего уровня ${Progress.xpToNext} XP`}</div>
       </div>
@@ -764,7 +774,7 @@ function dayDetailsHtml(epoch, days) {
   const st = days[epoch];
   const items = Progress.sessionsLog.filter((s) => s.dayEpochDay === epoch).sort((a, b) => b.startedAt - a.startedAt);
   const rows = items.length
-    ? items.map((s) => `<div class="list-row"><span class="list-col"><span class="list-t">${s.patternName}</span>
+    ? items.map((s) => `<div class="list-row"><span class="list-col"><span class="list-t">${esc(s.patternName)}</span>
         <span class="muted">${ruTime(s.startedAt)}</span></span>
         <span class="tag">${durationText(s.seconds)} · ${s.completed ? 'полностью' : 'прервано'}</span></div>`).join('')
     : `<p class="muted">Практик в этот день нет.${st && st.opens ? ` Открытий приложения: ${st.opens}.` : ''}</p>`;
@@ -782,7 +792,7 @@ function screenJournalEditor() {
   const tags = JOURNAL_TAGS.map((t) => `<button class="chip ${j.tags.includes(t) ? 'on' : ''}" onclick="window.__jTag('${t}')">${t}</button>`).join('');
   return `${header(j.id ? 'Запись дневника' : 'Новая запись', true)}
     <p class="muted">${new Date(j.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-    ${j.patternName ? `<p class="tag">Практика: ${j.patternName}${j.seconds > 0 ? ` · ${Math.floor(j.seconds / 60)} мин` : ''}</p>` : ''}
+    ${j.patternName ? `<p class="tag">Практика: ${esc(j.patternName)}${j.seconds > 0 ? ` · ${Math.floor(j.seconds / 60)} мин` : ''}</p>` : ''}
     <h3>Как вы себя чувствуете?</h3>
     ${ratingRow('Спокойствие', 'calm', j.calm)}
     ${ratingRow('Энергия', 'energy', j.energy)}
@@ -790,7 +800,7 @@ function screenJournalEditor() {
     <h3>Состояния</h3>
     <div class="chips">${tags}</div>
     <h3>Инсайты</h3>
-    <textarea class="text-area" placeholder="${prompt}" oninput="window.__jText(this.value)">${j.text}</textarea>
+    <textarea class="text-area" placeholder="${prompt}" oninput="window.__jText(this.value)">${esc(j.text)}</textarea>
     <label class="check-row"><input type="checkbox" ${j.favorite ? 'checked' : ''} onchange="window.__jFavEdit(this.checked)"><span>В избранное ★</span></label>
     <button class="primary" onclick="window.__jSave()">Сохранить</button>
     ${j.id ? '<button class="ghost" onclick="window.__jDelete()">Удалить запись</button>' : ''}
@@ -808,7 +818,7 @@ function screenStats() {
   const totalMinutes = Math.round(Progress.data.totalMinutes);
   const rows = sessions.length
     ? sessions.map((s) => `<div class="list-row"><span class="list-col">
-        <span class="list-t">${s.patternName}</span>
+        <span class="list-t">${esc(s.patternName)}</span>
         <span class="muted">${ruDate(s.dayEpochDay)}, ${ruTime(s.startedAt)}</span></span>
         <span class="tag">${Math.floor(s.seconds / 60)} мин · ${s.completed ? 'полностью' : 'прервано'}</span></div>`).join('')
     : '<p class="muted">Пока нет завершённых сессий. Пройди первую практику — и здесь появится история.</p>';
@@ -826,7 +836,7 @@ function renameModalHtml() {
   return `<div class="sheet-backdrop" onclick="window.__closeRename()">
     <div class="sheet" onclick="event.stopPropagation()">
       <div class="sheet-head"><span>Как вас зовут?</span><button class="back" onclick="window.__closeRename()">✕</button></div>
-      <input class="text-input" id="renameInput" maxlength="30" value="${Progress.data.profileName || ''}" placeholder="${TG.name()}" />
+      <input class="text-input" id="renameInput" maxlength="30" value="${esc(Progress.data.profileName || '')}" placeholder="${esc(TG.name())}" />
       <button class="primary" onclick="window.__saveName()">Сохранить</button>
     </div>
   </div>`;
@@ -913,7 +923,7 @@ function screenEnergyCourse() {
 function screenEnergyBuilder() {
   const programs = Progress.energyPrograms;
   const rows = programs.length
-    ? programs.map((p) => `<div class="list-row"><span class="list-col"><span class="list-t">${p.title}</span>
+    ? programs.map((p) => `<div class="list-row"><span class="list-col"><span class="list-t">${esc(p.title)}</span>
         <span class="muted">${p.stages.length} этап(ов) · ${fmtMinSec(p.stages.reduce((s, x) => s + x.seconds, 0))}</span></span>
         <button class="mini" onclick="window.__eeEdit('${p.id}')">Изменить</button>
         <button class="mini" onclick="window.__energyPlayCustom('${p.id}')">Играть</button></div>`).join('')
@@ -931,7 +941,7 @@ function screenEnergyEdit() {
   const stages = e.stages.map((s, i) => `<div class="stage-card">
     <div class="j-top"><span class="list-t">Этап ${i + 1}</span>
       ${e.stages.length > 1 ? `<button class="mini" onclick="window.__eeDel(${i})">Удалить</button>` : ''}</div>
-    <input class="text-input" maxlength="40" value="${s.title}" oninput="window.__eeField(${i},'title',this.value)" placeholder="Название этапа" />
+    <input class="text-input" maxlength="40" value="${esc(s.title)}" oninput="window.__eeField(${i},'title',this.value)" placeholder="Название этапа" />
     <label class="field-label">Длительность: <span id="eeSec-${i}">${fmtMinSec(s.seconds)}</span></label>
     <input type="range" min="5" max="1200" step="5" value="${s.seconds}" oninput="window.__eeField(${i},'seconds',this.value)" />
     <input class="text-input" maxlength="160" value="${s.guidance}" oninput="window.__eeField(${i},'guidance',this.value)" placeholder="Подсказка" />
@@ -940,7 +950,7 @@ function screenEnergyEdit() {
   </div>`).join('');
   return `${header(e.id ? 'Изменить программу' : 'Новая программа', true)}
     <label class="field-label">Название</label>
-    <input class="text-input" maxlength="60" value="${e.title}" oninput="window.__eeTitle(this.value)" />
+    <input class="text-input" maxlength="60" value="${esc(e.title)}" oninput="window.__eeTitle(this.value)" />
     ${stages}
     <button class="ghost" onclick="window.__eeAdd()">＋ Добавить этап</button>
     <button class="primary" onclick="window.__eeSave()">Сохранить</button>
@@ -973,19 +983,19 @@ function screenEnergyPlayer() {
   if (state.epFinished) {
     return `${header('Энергодыхание', true)}
       <div class="done"><div class="done-ico">🔷</div><h2>Готово!</h2>
-      <p>Энергодыхание · ${program.presetTitle} · ${Math.floor(program.totalSeconds / 60)} мин</p>
+      <p>Энергодыхание · ${esc(program.presetTitle)} · ${Math.floor(program.totalSeconds / 60)} мин</p>
       <p class="muted">Побудь в тишине пару минут.</p>
       <button class="primary" onclick="window.__epExit()">Назад</button></div>`;
   }
   const cur = stageAt(program, state.epElapsed || 0);
   const color = ENERGY_MODES[cur.stage.mode].color;
-  const list = program.stages.map((s, i) => `<div class="ep-item ${i === cur.idx ? 'on' : ''}" id="epItem-${i}">${fmtMinSec(s.seconds)} &nbsp; ${s.title}</div>`).join('');
+  const list = program.stages.map((s, i) => `<div class="ep-item ${i === cur.idx ? 'on' : ''}" id="epItem-${i}">${fmtMinSec(s.seconds)} &nbsp; ${esc(s.title)}</div>`).join('');
   return `<div class="session">
     <div class="s-top"><button class="back light" onclick="window.__epExit()">‹</button>
-      <span class="s-title">Энергодыхание · ${program.presetTitle}</span>
+      <span class="s-title">Энергодыхание · ${esc(program.presetTitle)}</span>
       <span class="s-remain" id="epRemain">${fmtClock(program.totalSeconds - (state.epElapsed || 0))}</span></div>
     <div class="ep-orb-wrap">
-      <div class="ep-orb" id="epOrb" style="background:${color}"><div class="orb-inner"><span id="epStage">${cur.stage.title}</span>
+      <div class="ep-orb" id="epOrb" style="background:${color}"><div class="orb-inner"><span id="epStage">${esc(cur.stage.title)}</span>
         <span class="orb-left" id="epStageLeft">${cur.stage.seconds - (state.epElapsed - cur.acc)}</span></div></div>
     </div>
     <p class="ep-guide" id="epGuide">${cur.stage.guidance}</p>
@@ -1091,12 +1101,12 @@ function journalRowsHtml() {
         return `<div class="j-row">
           <div class="j-top">
             <div><div class="muted">${ruDate(e.dayEpochDay)}</div>
-            ${e.patternName ? `<div>${e.patternName}</div>` : ''}</div>
+            ${e.patternName ? `<div>${esc(e.patternName)}</div>` : ''}</div>
             <button class="star ${e.favorite ? 'on' : ''}" onclick="window.__jFav('${e.id}')">★</button>
           </div>
           ${ratings.length ? `<div class="j-meta">${ratings.join(' · ')}</div>` : ''}
           ${tags ? `<div class="muted">${tags}</div>` : ''}
-          ${e.text ? `<div class="j-text">${e.text}</div>` : ''}
+          ${e.text ? `<div class="j-text">${esc(e.text)}</div>` : ''}
           <div class="row-2">
             <button class="mini" onclick="window.__openJournal('${e.id}')">Изменить</button>
             <button class="mini danger" onclick="window.__jDeleteId('${e.id}')">Удалить</button>
@@ -1177,7 +1187,7 @@ function screenWallet() {
   return `${header('Кошелёк')}
     <p class="sub">Подключите кошелёк TON, чтобы получать NFT-достижения и платить в TON. Кошелёк не нужен для самих практик.</p>
     ${connected
-      ? `<div class="wallet-card"><div>Подключено</div><div class="mono">${TON.shortAddress()}</div>
+      ? `<div class="wallet-card"><div>Подключено</div><div class="mono">${esc(TON.shortAddress())}</div>
          <button class="ghost" onclick="window.__tonDisconnect()">Отключить</button></div>`
       : `<button class="primary" onclick="window.__tonConnect()">Подключить TON-кошелёк</button>`}
     ${!TON.available ? '<p class="muted">TON Connect не загрузился (нет интернета или открыто вне Telegram).</p>' : ''}
@@ -1216,7 +1226,7 @@ function screenReferral() {
     <p class="sub">Приглашайте друзей и получайте <b>${r.percent}%</b> от каждой их оплаты звёздами.</p>
     <div class="info-card">
       <h3>Ваша ссылка</h3>
-      <p class="mono" style="word-break:break-all">${link}</p>
+      <p class="mono" style="word-break:break-all">${esc(link)}</p>
       <div class="row-2">
         <button class="ghost" onclick="window.__copyRef('${link}')">Копировать</button>
         <button class="primary" onclick="window.__shareRef('${link}')">Поделиться</button>
@@ -1229,7 +1239,7 @@ function screenReferral() {
     </div>
     <h3>Выплата</h3>
     <p class="muted">Заработанные звёзды перечисляем в TON на ваш кошелёк (после холда Telegram). Укажите адрес и запросите выплату.</p>
-    <input class="text-input" value="${r.wallet || ''}" placeholder="TON-кошелёк (EQ…)" oninput="window.__refWallet(this.value)" />
+    <input class="text-input" value="${esc(r.wallet || '')}" placeholder="TON-кошелёк (EQ…)" oninput="window.__refWallet(this.value)" />
     <button class="primary" onclick="window.__refPayout()">Запросить выплату</button>
     ${navBar()}`;
 }
@@ -1920,7 +1930,7 @@ function withTimeout(p, ms) {
 
     // ---- Дальше — в фоне, чтобы НЕ тормозить запуск ----
     // (сервер на free-тарифе «просыпается» до минуты; UI уже показан)
-    loadScript('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js').then(() => {
+    loadScript('https://unpkg.com/@tonconnect/ui@5.0.1/dist/tonconnect-ui.min.js', { integrity: 'sha384-QZvMrS6g6/TQyHjoc44P3RG1Kzfqnwen5A/EZ0LaQZKP8hvNY2stUmyFB5QDIKmp' }).then(() => {
       try { TON.init(new URL('tonconnect-manifest.json', location.href).href); } catch (e) {}
     });
     STARS.syncPremium().catch(() => {});

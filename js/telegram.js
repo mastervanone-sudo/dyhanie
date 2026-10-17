@@ -90,11 +90,16 @@ export const TG = {
 };
 
 // Асинхронная подгрузка внешних скриптов (Telegram WebApp, TON Connect) без блокировки.
-export function loadScript(src) {
+// opts.integrity — SRI-хэш; при задании включаем crossOrigin (нужен CDN с CORS).
+export function loadScript(src, opts = {}) {
   return new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = src;
     s.async = true;
+    if (opts.integrity) {
+      s.integrity = opts.integrity;
+      s.crossOrigin = opts.crossOrigin || 'anonymous';
+    }
     s.onload = () => resolve(true);
     s.onerror = () => resolve(false);
     document.head.appendChild(s);
