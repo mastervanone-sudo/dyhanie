@@ -1,20 +1,20 @@
-import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v40';
-import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v40';
-import { ARTICLES, articleById } from './knowledge.js?v40';
-import { MusicLibrary } from './music.js?v40';
-import { SOLFEGGIO, toneByHz } from './solfeggio.js?v40';
-import { BINAURAL, binauralByHz } from './binaural.js?v40';
-import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v40';
-import { MatrixBase } from './matrix.js?v40';
-import { Audio, BREATH_VARIANTS } from './audio.js?v40';
-import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v40';
-import { TG, loadScript } from './telegram.js?v40';
-import { BreathSession, fmtClock } from './session.js?v40';
-import { TON } from './ton.js?v40';
-import { STARS, PLANS } from './stars.js?v40';
-import { Referral } from './referral.js?v40';
-import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v40';
-import { APP_VERSION } from './config.js?v40';
+import { PATTERNS, GOALS, breathsPerMinute, getPattern } from './patterns.js?v41';
+import { Progress, ACHIEVEMENTS, isCustomPatternId } from './store.js?v41';
+import { ARTICLES, articleById } from './knowledge.js?v41';
+import { MusicLibrary } from './music.js?v41';
+import { SOLFEGGIO, toneByHz } from './solfeggio.js?v41';
+import { BINAURAL, binauralByHz } from './binaural.js?v41';
+import { ENERGY_MODES, MODE_DESCRIPTIONS, ENERGY_PRESETS, energyProgramById, EnergyInfo, EnergyPartners } from './energy.js?v41';
+import { MatrixBase } from './matrix.js?v41';
+import { Audio, BREATH_VARIANTS } from './audio.js?v41';
+import { OrbVisuals, VISUAL_LEVELS, VISUAL_LABELS } from './visuals.js?v41';
+import { TG, loadScript } from './telegram.js?v41';
+import { BreathSession, fmtClock } from './session.js?v41';
+import { TON } from './ton.js?v41';
+import { STARS, PLANS } from './stars.js?v41';
+import { Referral } from './referral.js?v41';
+import { LANGS, lang, setLang, translateDOM, translateStr } from './i18n.js?v41';
+import { APP_VERSION } from './config.js?v41';
 
 const app = document.getElementById('app');
 const state = {
@@ -1097,7 +1097,10 @@ function journalRowsHtml() {
           ${ratings.length ? `<div class="j-meta">${ratings.join(' · ')}</div>` : ''}
           ${tags ? `<div class="muted">${tags}</div>` : ''}
           ${e.text ? `<div class="j-text">${e.text}</div>` : ''}
-          <button class="mini" onclick="window.__openJournal('${e.id}')">Открыть</button>
+          <div class="row-2">
+            <button class="mini" onclick="window.__openJournal('${e.id}')">Изменить</button>
+            <button class="mini danger" onclick="window.__jDeleteId('${e.id}')">Удалить</button>
+          </div>
         </div>`;
       }).join('')
     : '<p class="muted">Пока пусто. Добавьте первую запись — и здесь появятся ваши заметки.</p>';
@@ -1279,7 +1282,8 @@ window.__open = (id) => { const p = findPattern(id); if (p) go('detail', { patte
 window.__back = () => {
   const s = state.screen;
   if (s === 'knowledgeDetail') go('knowledge');
-  else if (s === 'journalEditor' || s === 'stats') go('profile');
+  else if (s === 'journalEditor') go('diary');
+  else if (s === 'stats') go('profile');
   else if (s === 'referral') go('premium');
   else if (s === 'diary') go('progress');
   else if (s === 'wallet') go('profile');
@@ -1787,6 +1791,12 @@ window.__jDelete = async () => {
   Progress.deleteJournal(state.journal.id);
   await Progress.save();
   go('diary');
+};
+window.__jDeleteId = async (id) => {
+  if (!confirm(translateStr('Удалить запись?'))) return;
+  Progress.deleteJournal(id);
+  await Progress.save();
+  render();
 };
 
 function showDone(summary, res) {

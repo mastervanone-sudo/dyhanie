@@ -208,6 +208,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 2px
 .dot.on { background: var(--accent); }
 .tag { color: var(--accent2); font-size: 12px; white-space: nowrap; }
 .mini { background: var(--card2); border: 0; color: var(--text); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.row-2 .mini { flex: 1; }
+.mini.danger { color: #ff6b6b; }
 
 /* шторка музыки */
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; display: flex; align-items: flex-end; justify-content: center; }
